@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	"recipe_box/internal/storage"
 	"recipe_box/internal/ui"
 
+	"github.com/c-bata/go-prompt"
 	"github.com/spf13/cobra"
 )
 
@@ -146,61 +146,38 @@ func runRecipeGenerate(cmd *cobra.Command, args []string) error {
 }
 
 func promptForGenerateOptions() error {
-	reader := bufio.NewReader(os.Stdin)
-
 	header := i18n.T(i18n.MsgGenerateHeader)
 	ui.TitlePrintf("%s\n", header)
 	fmt.Println(strings.Repeat("=", len(header)))
 	fmt.Println()
 
+	// Use go-prompt's Input for each question (works with REPL)
+	emptyCompleter := func(d prompt.Document) []prompt.Suggest { return nil }
+
 	// Recipe prompt (main request)
-	ui.LabelPrintf("%s: ", i18n.T(i18n.MsgGeneratePrompt))
-	prompt, err := reader.ReadString('\n')
-	if err != nil {
-		return err
-	}
-	generatePrompt = strings.TrimSpace(prompt)
+	generatePrompt = prompt.Input(i18n.T(i18n.MsgGeneratePrompt)+": ", emptyCompleter)
 
 	// Ingredients
-	ui.LabelPrintf("%s: ", i18n.T(i18n.MsgGenerateIngredients))
-	ingredients, err := reader.ReadString('\n')
-	if err != nil {
-		return err
-	}
-	generateIngredients = strings.TrimSpace(ingredients)
+	generateIngredients = prompt.Input(i18n.T(i18n.MsgGenerateIngredients)+": ", emptyCompleter)
 
 	// Cuisine
-	ui.LabelPrintf("%s: ", i18n.T(i18n.MsgGenerateCuisine))
-	cuisine, err := reader.ReadString('\n')
-	if err != nil {
-		return err
-	}
-	generateCuisine = strings.TrimSpace(cuisine)
+	generateCuisine = prompt.Input(i18n.T(i18n.MsgGenerateCuisine)+": ", emptyCompleter)
 
 	// Vegetarian
-	ui.LabelPrintf("%s ", i18n.T(i18n.MsgGenerateVegetarian))
-	vegStr, err := reader.ReadString('\n')
-	if err != nil {
-		return err
-	}
-	generateVegetarian = isYes(strings.TrimSpace(vegStr))
+	vegStr := prompt.Input(i18n.T(i18n.MsgGenerateVegetarian)+" ", emptyCompleter)
+	generateVegetarian = isYes(vegStr)
 
 	// Quick
-	ui.LabelPrintf("%s ", i18n.T(i18n.MsgGenerateQuick))
-	quickStr, err := reader.ReadString('\n')
-	if err != nil {
-		return err
-	}
-	generateQuick = isYes(strings.TrimSpace(quickStr))
+	quickStr := prompt.Input(i18n.T(i18n.MsgGenerateQuick)+" ", emptyCompleter)
+	generateQuick = isYes(quickStr)
 
 	return nil
 }
 
 func promptYesNo(question string) bool {
-	reader := bufio.NewReader(os.Stdin)
-	ui.LabelPrintf("%s ", question)
-	answer, _ := reader.ReadString('\n')
-	return isYes(strings.TrimSpace(answer))
+	emptyCompleter := func(d prompt.Document) []prompt.Suggest { return nil }
+	answer := prompt.Input(question+" ", emptyCompleter)
+	return isYes(answer)
 }
 
 func isYes(s string) bool {
