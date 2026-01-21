@@ -2,7 +2,7 @@
 
 ## Current Focus
 
-**Iteration 3: AI Generation** - Claude API integration.
+**Iteration 4: Shopping List** - Generate shopping lists from recipes.
 
 ## Blockers
 
@@ -11,11 +11,12 @@ None.
 ## Handoff Notes
 
 **Last session (2026-01-21)**:
-- Completed Iteration 2: Recipe CRUD
-- Created recipe service with Storage interface for testability
-- Implemented `recipe add` (interactive prompts)
-- Implemented `recipe list`, `recipe view <id>`, `recipe delete <id>`
-- Added 6 unit tests for recipe service
-- All 15 tests passing
+- Completed Iteration 3: AI Generation
+- Created Claude API client (`internal/ai/claude.go`)
+- Implemented `recipe generate` with flags (--prompt, --ingredients, --cuisine, --vegetarian, --quick)
+- Implemented `recipe save` to save last generated recipe
+- Structured JSON output parsing for recipes
+- Added 8 unit tests for AI client (prompt building, response parsing)
+- All 23 tests passing
 
-**Next**: Start Iteration 3 - Claude API client and `recipe generate` command.
+**Next**: Start Iteration 4 - Shopping list commands.

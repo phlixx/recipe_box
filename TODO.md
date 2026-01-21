@@ -2,14 +2,14 @@
 
 See `ITERATIONS.md` for full iteration plan.
 
-## Current: Iteration 3 - AI Generation
-
-- [ ] Claude API client (`internal/ai/`)
-- [ ] `recipe generate` command
-- [ ] `recipe save` command
-
-## Up Next: Iteration 4 - Shopping List
+## Current: Iteration 4 - Shopping List
 
 - [ ] `shopping generate <recipe-id>` command
 - [ ] `shopping show` command
 - [ ] `shopping clear` command
+
+## Up Next: Iteration 5 - Localization
+
+- [ ] `config set language de|en`
+- [ ] CLI messages in selected language
+- [ ] AI generates recipes in selected language
