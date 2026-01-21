@@ -11,24 +11,22 @@ None.
 ## Handoff Notes
 
 **Last session (2026-01-21)**:
-- Completed Iteration 6: Interactive Mode
-- Added dependencies: go-prompt, fatih/color
-- Created `internal/ui/colors.go` for terminal styling
-- Created `cmd/interactive.go` with REPL logic
-- Updated `main.go` to default to interactive mode when no args
-- Added tab completion for commands and recipe IDs
-- Added colored output to all command outputs
-- Renamed `prompt()` to `readLine()` in recipe_add.go to avoid conflict
+- Enhanced Iteration 6 with interactive recipe generation prompts
+- Added ASCII art feature to AI-generated recipes
+- Fixed stdin handling conflict between go-prompt and bufio.Reader
+- Fixed shopping generate showing misleading hint when no items added
 
-**Implementation details**:
-- Interactive mode starts with `recipe_box` (no args)
-- Emoji prompt: `🍳 > `
-- Tab completion for all commands and recipe IDs
-- Command history via arrow keys (go-prompt built-in)
-- `exit` or `quit` to leave REPL
-- `help` for command overview
-- Traditional CLI still works: `recipe_box recipe list`
-- Colors: cyan titles, yellow categories, green success, red errors
-- Respects `NO_COLOR` environment variable
+**Iteration 6 enhancements**:
+- Interactive prompts for `recipe generate` (when no flags provided in REPL)
+- Prompts for: recipe description, ingredients, cuisine, vegetarian, quick
+- Auto-prompt to save recipe after generation
+- Uses `prompt.Input()` from go-prompt (avoids stdin conflicts)
+- `resetGenerateFlags()` clears state between REPL invocations
+
+**ASCII art feature**:
+- Added `AsciiArt` field to Recipe struct (optional, omitempty)
+- AI prompt requests small ASCII art (8-12 lines, max 40 chars wide)
+- Displayed at top of recipe in `printRecipe()`
+- Only AI-generated recipes will have art; manual/existing recipes unaffected
 
 **Next**: Start Iteration 7 - add `--servings` flag to view/generate commands.

@@ -12,6 +12,7 @@ type Recipe struct {
 	Tags        []string     `json:"tags"`
 	Source      Source       `json:"source"`
 	Language    Language     `json:"language"`
+	AsciiArt    string       `json:"ascii_art,omitempty"`
 }
 
 type Ingredient struct {

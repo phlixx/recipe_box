@@ -157,11 +157,13 @@ Return ONLY valid JSON in this exact format (no markdown, no explanation):
     "Step 1 description",
     "Step 2 description"
   ],
-  "tags": ["tag1", "tag2"]
+  "tags": ["tag1", "tag2"],
+  "ascii_art": "small ASCII art of the dish (8-12 lines, max 40 chars wide)"
 }
 
 Categories for ingredients must be one of: produce, dairy, meat, pantry, frozen, other
-Units should be metric where appropriate (g, ml, etc.) or common cooking units (cups, tbsp, tsp)`, userRequest, constraintText, langInstruction)
+Units should be metric where appropriate (g, ml, etc.) or common cooking units (cups, tbsp, tsp)
+The ascii_art should be a small, simple ASCII art representation of the finished dish using basic characters. Use \n for newlines within the string.`, userRequest, constraintText, langInstruction)
 }
 
 func parseRecipeFromResponse(text string, language string) (*recipe.Recipe, error) {

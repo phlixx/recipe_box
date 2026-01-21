@@ -260,6 +260,66 @@ Implement **comprehensive localization**:
 
 ---
 
+## ADR-011: Interactive Recipe Generation Prompts
+
+**Date**: 2026-01-21
+**Status**: Accepted
+
+### Context
+In REPL mode, running `recipe generate` with no flags requires the user to know all available options. A more guided experience would help users discover and use generation features.
+
+### Decision
+Add **interactive prompts** when `recipe generate` is run without flags in REPL mode:
+
+1. Prompt for recipe description (main request)
+2. Prompt for ingredients to use (optional)
+3. Prompt for cuisine type (optional)
+4. Prompt for vegetarian preference (y/n)
+5. Prompt for quick recipe preference (y/n)
+6. After generation, prompt to save to collection (y/n)
+
+Use `prompt.Input()` from go-prompt library (not bufio.Reader) to avoid stdin conflicts with the REPL.
+
+### Consequences
+- **Pros**:
+  - Guided experience for new users
+  - Discoverable options without reading help
+  - Seamless flow from generate to save
+- **Cons**:
+  - Slightly slower than flags for power users
+  - Flags still available for scripting/quick use
+
+---
+
+## ADR-012: ASCII Art for Recipes
+
+**Date**: 2026-01-21
+**Status**: Accepted
+
+### Context
+Terminal output is text-heavy. A visual element would make the experience more engaging and help users quickly identify dishes.
+
+### Decision
+Add **ASCII art** to AI-generated recipes:
+
+1. Add `ascii_art` field to Recipe struct (optional, `omitempty`)
+2. Request ASCII art in AI prompt (8-12 lines, max 40 chars wide)
+3. Display at top of recipe output (before title)
+4. Art generated inline with recipe (no external APIs/images)
+
+### Consequences
+- **Pros**:
+  - More engaging visual experience
+  - Differentiates AI-generated recipes
+  - Minimal token cost (~200-400 extra tokens per recipe)
+  - Art cached with recipe (only generated once)
+- **Cons**:
+  - Slightly larger API responses
+  - Quality varies by dish complexity
+  - Manual recipes won't have art (acceptable)
+
+---
+
 ## Template for New Decisions
 
 ```markdown

@@ -192,6 +192,11 @@ Iter 8: Localization+     → Complete all strings, units
 - [x] Colored output (headers, categories, success/error)
 - [x] Traditional CLI still works (`recipe_box recipe list`)
 
+**Enhancements added**:
+- [x] Interactive prompts for `recipe generate` (when no flags in REPL)
+- [x] Auto-prompt to save recipe after generation
+- [x] ASCII art in AI-generated recipes (8-12 lines, displayed at top)
+
 **Exit Criteria**:
 ```bash
 $ recipe_box
@@ -207,12 +212,15 @@ $
 
 **Files to create/modify**:
 - `cmd/interactive.go` - REPL logic
+- `cmd/recipe_generate.go` - Interactive prompts, ASCII art display
 - `internal/ui/colors.go` - Color/style definitions
+- `internal/recipe/recipe.go` - AsciiArt field
+- `internal/ai/claude.go` - ASCII art in prompt
 - `main.go` - Entry point routing
 
 **Dependencies**:
 - `github.com/c-bata/go-prompt`
-- `github.com/fatih/color` or `github.com/charmbracelet/lipgloss`
+- `github.com/fatih/color`
 
 ---
 

@@ -47,6 +47,13 @@ func runRecipeView(cmd *cobra.Command, args []string) error {
 }
 
 func printRecipe(r *recipe.Recipe) {
+	// Display ASCII art if available
+	if r.AsciiArt != "" {
+		fmt.Println()
+		fmt.Println(r.AsciiArt)
+		fmt.Println()
+	}
+
 	ui.TitlePrintf("%s\n", r.Title)
 	fmt.Println(strings.Repeat("=", len(r.Title)))
 	fmt.Println()
