@@ -78,10 +78,18 @@ UNDERSTAND → PLAN → IMPLEMENT → VERIFY → DOCUMENT
 - Keep changes focused and minimal
 
 ### 4. Verify
-- `go build ./...` - compiles
-- `go test ./...` - tests pass
-- `go vet ./...` - no issues
-- Manual test if needed: `go run main.go <command>`
+
+**Run after every change:**
+```bash
+make check
+```
+
+This runs: `fmt` → `vet` → `test`
+
+For commits, also run:
+```bash
+make build && make smoke
+```
 
 ### 5. Document
 - Update STATUS.md (focus/blockers)
@@ -124,16 +132,45 @@ recipe_box/
 
 ---
 
-## Verification Checklist
+## Verification Loop
+
+**ALWAYS run verification after making changes.** This is non-negotiable.
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   IMPLEMENT                          │
+│         Write code in small increments              │
+└──────────────────────┬──────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────┐
+│                    VERIFY                            │
+│              make check                              │
+│         (fmt → vet → test)                          │
+└──────────────────────┬──────────────────────────────┘
+                       │
+              ┌────────┴────────┐
+              │                 │
+              ▼                 ▼
+         ✓ PASS            ✗ FAIL
+              │                 │
+              ▼                 ▼
+         CONTINUE             FIX
+      (next increment     (debug, resolve,
+        or commit)         then re-verify)
+```
+
+### Checklist
 
 Before considering any task complete:
 
-- [ ] `go build ./...` passes
-- [ ] `go test ./...` passes
-- [ ] `go vet ./...` passes
-- [ ] Manually tested (if applicable)
+- [ ] `make check` passes (fmt, vet, test)
+- [ ] `make build` succeeds
+- [ ] Smoke test if CLI behavior changed
 - [ ] STATUS.md updated
 - [ ] Completed tasks removed from TODO.md
+
+> **If `make check` doesn't pass, the work isn't done.**
 
 ---
 
@@ -161,9 +198,23 @@ Before considering any task complete:
 
 | Action | Command |
 |--------|---------|
-| Build | `go build ./...` |
-| Test | `go test ./...` |
-| Run | `go run main.go` |
-| Vet | `go vet ./...` |
-| Format | `go fmt ./...` |
-| History | `git log --oneline -5` |
+| **Full check** | `make check` |
+| Build binary | `make build` |
+| Run tests | `make test` |
+| Run with args | `make run ARGS="config get api_key"` |
+| Test coverage | `make test-coverage` |
+| Smoke test | `make smoke` |
+| Git history | `git log --oneline -5` |
+
+### Running Specific Tests
+
+```bash
+# All tests
+make test
+
+# Specific package
+go test -v ./internal/config/...
+
+# Specific test
+go test -v -run TestConfig_SetAndGet ./internal/config/
+```
