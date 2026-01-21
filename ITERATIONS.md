@@ -156,17 +156,156 @@ recipe_box shopping show
 
 ---
 
-## Summary
+## Summary - MVP (v0.1) ✅
 
-| Iter | Focus | Key Commands |
+| Iter | Focus | Key Commands | Status |
+|------|-------|--------------|--------|
+| 1 | Foundation | `config set/get` | ✅ Done |
+| 2 | Recipe CRUD | `recipe add/list/view/delete` | ✅ Done |
+| 3 | AI Generation | `recipe generate/save` | ✅ Done |
+| 4 | Shopping | `shopping generate/show/clear` | ✅ Done |
+| 5 | Localization | Language support | ✅ Done |
+
+---
+
+# Post-MVP: Phase 1 - UX & Polish (v0.2)
+
+```
+Iter 6: Interactive Mode  → REPL with autocomplete
+Iter 7: Servings Scaling  → Scale recipes up/down
+Iter 8: Localization+     → Complete all strings, units
+```
+
+---
+
+## Iteration 6: Interactive Mode
+
+**Goal**: REPL as default mode with colored output
+
+**Deliverables**:
+- [ ] Interactive mode when running `recipe_box` (no args)
+- [ ] Emoji prompt: `🍳 > `
+- [ ] Tab completion for commands
+- [ ] Tab completion for recipe IDs
+- [ ] Command history (arrow keys)
+- [ ] `exit` command to quit
+- [ ] Colored output (headers, categories, success/error)
+- [ ] Traditional CLI still works (`recipe_box recipe list`)
+
+**Exit Criteria**:
+```bash
+$ recipe_box
+🍳 > recipe list
+Found 2 recipe(s):          # colored header
+  816758d9  Chicken Teriyaki
+  ...
+
+🍳 > recipe view 81<TAB>    # autocompletes to 816758d9
+🍳 > exit
+$
+```
+
+**Files to create/modify**:
+- `cmd/interactive.go` - REPL logic
+- `internal/ui/colors.go` - Color/style definitions
+- `main.go` - Entry point routing
+
+**Dependencies**:
+- `github.com/c-bata/go-prompt`
+- `github.com/fatih/color` or `github.com/charmbracelet/lipgloss`
+
+---
+
+## Iteration 7: Servings Scaling
+
+**Goal**: Scale recipe ingredients for different serving sizes
+
+**Deliverables**:
+- [ ] `recipe view <id> --servings N` - View with scaled ingredients
+- [ ] `recipe generate --servings N` - Generate for specific servings
+- [ ] `shopping generate <id> --servings N` - Shopping list with scaled quantities
+- [ ] Display shows both original and scaled servings
+
+**Exit Criteria**:
+```bash
+🍳 > recipe view 816758d9 --servings 4
+Chicken Teriyaki (scaled: 4 servings, original: 10)
+
+Ingredients:
+  - 1 kg chicken thighs (was 2.5 kg)
+  - 80 ml soy sauce (was 200 ml)
+  ...
+```
+
+**Files to modify**:
+- `cmd/recipe_view.go` - Add --servings flag
+- `cmd/recipe_generate.go` - Add --servings flag
+- `cmd/shopping_generate.go` - Add --servings flag
+- `internal/recipe/recipe.go` - Add Scale() method
+
+---
+
+## Iteration 8: Localization Hardening
+
+**Goal**: Complete and consistent localization
+
+**Deliverables**:
+- [ ] Audit all `fmt.Print*` calls for hardcoded strings
+- [ ] Localize Cobra command descriptions (Short, Long, Use)
+- [ ] Localize unit names (tbsp→EL, cups→Tassen, tsp→TL)
+- [ ] Localize error messages (user-actionable ones)
+- [ ] Add unit tests verifying all keys exist in both languages
+- [ ] Interactive mode messages localized
+
+**Exit Criteria**:
+```bash
+$ recipe_box config set language de
+$ recipe_box
+🍳 > hilfe                    # or still 'help'?
+Verfügbare Befehle:
+  rezept     Rezepte verwalten
+  einkauf    Einkaufsliste verwalten
+  config     Einstellungen
+  exit       Beenden
+
+🍳 > rezept liste
+2 Rezept(e) gefunden:
+  ...
+```
+
+**Decision needed**: Localize command names too? (`recipe`→`rezept`, `shopping`→`einkauf`)
+
+**Files to modify**:
+- `internal/i18n/messages_*.go` - Add all missing keys
+- `cmd/*.go` - Use i18n for Short/Long descriptions
+- `internal/i18n/units.go` - Unit name translations
+
+---
+
+## Summary - Post-MVP Phase 1
+
+| Iter | Focus | Key Features |
 |------|-------|--------------|
-| 1 | Foundation | `config set/get` |
-| 2 | Recipe CRUD | `recipe add/list/view/delete` |
-| 3 | AI Generation | `recipe generate/save` |
-| 4 | Shopping | `shopping generate/show/clear` |
-| 5 | Localization | Language support |
+| 6 | Interactive Mode | REPL, autocomplete, colors |
+| 7 | Servings | Scale ingredients up/down |
+| 8 | Localization+ | Complete translations, units |
 
-**Total: 5 iterations for MVP**
+**Total: 3 iterations for v0.2**
+
+---
+
+## Future Phases (Ideas)
+
+**Phase 2 - Meal Planning**:
+- Weekly meal planner
+- Leftover tracking
+- Shopping from plan
+
+**Phase 3 - Advanced Features**:
+- Recipe import from URL
+- Pantry tracking
+- Export to PDF/Markdown
+- Recipe sharing
 
 ---
 
@@ -174,5 +313,6 @@ recipe_box shopping show
 
 - Each iteration should be a working increment (can use CLI after each)
 - Iterations 1-2 work fully offline (no API needed)
-- Iteration 3 requires Claude API key
+- Iteration 3+ requires Claude API key
 - Order matters: 1 → 2 → 3 → 4 → 5 (dependencies)
+- Post-MVP iterations are more independent

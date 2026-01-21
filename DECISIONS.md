@@ -132,6 +132,134 @@ Recipes need measurements. Support metric, imperial, or both?
 
 ---
 
+## ADR-007: Interactive Mode as Default
+
+**Date**: 2026-01-21
+**Status**: Accepted
+
+### Context
+Currently, each command requires running `recipe_box <command>` from the shell. Users want a more fluid experience where they can stay in the application and issue multiple commands without retyping the binary name.
+
+### Decision
+Implement an **interactive REPL mode** as the default when running `recipe_box` with no arguments.
+
+- Use `go-prompt` library for REPL functionality
+- Emoji-based prompt: `🍳 > `
+- Tab completion for commands and recipe IDs
+- Command history via arrow keys
+- Exit via `exit` command
+- Traditional CLI mode (`recipe_box recipe list`) remains available for scripting
+
+### Consequences
+- **Pros**:
+  - More fluid user experience
+  - Autocomplete reduces typing errors
+  - History allows quick command repetition
+  - Feels like a proper application
+- **Cons**:
+  - Additional dependency (go-prompt)
+  - Need to handle two entry points (interactive vs direct)
+  - Slightly more complex main.go
+
+---
+
+## ADR-008: Terminal Styling
+
+**Date**: 2026-01-21
+**Status**: Accepted
+
+### Context
+Plain text output is functional but lacks visual hierarchy. Users want colored/styled output to improve readability.
+
+### Decision
+Add **rich but subtle terminal styling** using `fatih/color` or `lipgloss`.
+
+Style guide:
+- **Headers/Titles**: Bold, subtle color (cyan or blue)
+- **Categories**: Muted colors to group visually
+- **Success messages**: Green
+- **Errors**: Red
+- **Prompts/Labels**: Dim/gray
+- **Values/Data**: Default color (white/terminal default)
+
+Respect `NO_COLOR` environment variable for accessibility.
+
+### Consequences
+- **Pros**:
+  - Better visual hierarchy
+  - Easier to scan output
+  - More professional feel
+- **Cons**:
+  - Additional dependency
+  - Need to test in different terminals
+  - Must handle non-color terminals gracefully
+
+---
+
+## ADR-009: Servings Scaling
+
+**Date**: 2026-01-21
+**Status**: Accepted
+
+### Context
+Recipes are generated/stored with a fixed serving count. Users want to scale recipes up or down without modifying the original.
+
+### Decision
+Add `--servings` flag to relevant commands:
+
+- `recipe view <id> --servings N` - Display with scaled ingredients
+- `recipe generate --servings N` - Generate for specific serving count
+- `shopping generate <id> --servings N` - Generate list with scaled quantities
+
+Scaling is linear: `new_quantity = original_quantity * (new_servings / original_servings)`
+
+### Consequences
+- **Pros**:
+  - Flexible for different household sizes
+  - No need to duplicate recipes
+  - Shopping list accuracy for actual needs
+- **Cons**:
+  - Some ingredients don't scale linearly (e.g., salt, spices)
+  - Fractional quantities may look odd (0.33 onions)
+
+---
+
+## ADR-010: Localization Strategy
+
+**Date**: 2026-01-21
+**Status**: Accepted
+
+### Context
+MVP localization covered main user-facing messages but some strings remain hardcoded. Need a systematic approach.
+
+### Decision
+Implement **comprehensive localization**:
+
+1. **All user-visible strings** go through `i18n.T()`
+2. **Cobra command descriptions** (Short, Long) localized
+3. **Unit names** localized (tbsp→EL, cups→Tassen, etc.)
+4. **Error messages** localized where user-actionable
+5. **Audit process**: grep for `fmt.Print` and `fmt.Errorf` to find hardcoded strings
+
+**Keep in English (static)**:
+- Command names (`recipe`, `shopping`, `config`, `help`)
+- Flag names (`--servings`, `--prompt`, `--quick`)
+- Technical error details (for debugging)
+- Log messages
+- JSON field names
+
+### Consequences
+- **Pros**:
+  - Consistent language experience
+  - Professional feel for non-English users
+  - Scalable to more languages later
+- **Cons**:
+  - More translation work
+  - Longer message files
+  - Need to maintain parity between languages
+
+---
+
 ## Template for New Decisions
 
 ```markdown

@@ -2,7 +2,7 @@
 
 ## Current Focus
 
-**MVP Complete** - All 5 iterations finished.
+**Iteration 6: Interactive Mode** - REPL with autocomplete and colored output.
 
 ## Blockers
 
@@ -11,33 +11,20 @@ None.
 ## Handoff Notes
 
 **Last session (2026-01-21)**:
-- Completed Iteration 5: Localization
-- Created i18n package (`internal/i18n/`)
-  - `i18n.go` - Core translation system with T() function
-  - `messages_en.go` - English translations
-  - `messages_de.go` - German translations
-- Updated AI client to generate recipes in selected language
-- Fully localized all user-facing CLI messages:
-  - Config messages (set, key not found)
-  - Recipe commands (list, view, add, delete, generate, save)
-  - Shopping list commands (show, generate, clear)
-  - Recipe view labels (Servings, Prep time, Ingredients, Steps, etc.)
-  - Categories (Produce→Obst & Gemüse, Dairy→Milchprodukte, etc.)
-- Added 12 unit tests for i18n package
-- All 44 tests passing
+- Completed MVP (Iterations 1-5)
+- Planned Post-MVP Phase 1 (Iterations 6-8)
+- Added ADRs for:
+  - ADR-007: Interactive Mode as Default
+  - ADR-008: Terminal Styling
+  - ADR-009: Servings Scaling
+  - ADR-010: Localization Strategy
+- Updated ITERATIONS.md with new iteration plans
 
-**Features implemented**:
-- `config set language de|en` - Set language preference
-- All CLI messages displayed in selected language
-- AI generates recipes in selected language (DE/EN)
-- Shopping list categories localized
-- Recipe add prompts localized
-- Recipe view labels localized
+**Decisions made**:
+- Interactive mode is default (no args → REPL)
+- Emoji prompt: `🍳 > `
+- Rich but subtle colors
+- `exit` command to quit
+- Traditional CLI remains available
 
-**MVP Complete**:
-All 5 iterations have been implemented. The CLI supports:
-1. Config management (api_key, language)
-2. Recipe CRUD (add, list, view, delete)
-3. AI recipe generation with Claude
-4. Shopping list management
-5. Full German and English localization
+**Next**: Start Iteration 6 - add go-prompt and color dependencies, implement REPL.

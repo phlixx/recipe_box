@@ -2,18 +2,24 @@
 
 See `ITERATIONS.md` for full iteration plan.
 
-## MVP Complete
+## Current: Iteration 6 - Interactive Mode
 
-All 5 iterations have been completed:
-- Iteration 1: Foundation (config & storage)
-- Iteration 2: Recipe CRUD (add/list/view/delete)
-- Iteration 3: AI Generation (Claude integration)
-- Iteration 4: Shopping List (generate/show/clear)
-- Iteration 5: Localization (DE/EN support)
+- [ ] Add `go-prompt` dependency
+- [ ] Add `fatih/color` or `lipgloss` dependency
+- [ ] Create `internal/ui/colors.go` - color definitions
+- [ ] Create `cmd/interactive.go` - REPL logic
+- [ ] Implement emoji prompt `🍳 > `
+- [ ] Tab completion for commands
+- [ ] Tab completion for recipe IDs
+- [ ] Command history
+- [ ] `exit` command
+- [ ] Color recipe output (headers, categories)
+- [ ] Color shopping list output
+- [ ] Color success/error messages
+- [ ] Update `main.go` to default to interactive mode
+- [ ] Keep traditional CLI working
 
-## Future Ideas
+## Up Next
 
-- [ ] Meal planning (weekly planner)
-- [ ] Leftover tracking
-- [ ] Recipe import from URLs
-- [ ] Export recipes to PDF/Markdown
+**Iteration 7**: Servings scaling (`--servings` flag)
+**Iteration 8**: Localization hardening (all strings, units)
