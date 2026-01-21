@@ -14,6 +14,9 @@ import (
 
 // RunInteractive starts the interactive REPL mode
 func RunInteractive() {
+	// Set interactive mode flag for commands to use
+	IsInteractive = true
+
 	ui.TitlePrintf("Recipe Box")
 	fmt.Println(" - Interactive Mode")
 	ui.LabelPrintf("Type 'help' for commands, 'exit' to quit\n\n")

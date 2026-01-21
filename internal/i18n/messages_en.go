@@ -63,4 +63,15 @@ var messagesEN = map[string]string{
 	MsgPromptIngredient:  "Ingredient (e.g., '2 cups flour')",
 	MsgPromptStep:        "Step %d",
 	MsgPromptTags:        "Tags (comma-separated, optional)",
+
+	// Interactive generate prompts
+	MsgGenerateHeader:      "Generate a Recipe",
+	MsgGeneratePrompt:      "What kind of recipe would you like?",
+	MsgGenerateIngredients: "Ingredients to use (comma-separated, optional)",
+	MsgGenerateCuisine:     "Cuisine type (e.g., italian, mexican, optional)",
+	MsgGenerateVegetarian:  "Vegetarian? (y/n)",
+	MsgGenerateQuick:       "Quick recipe under 30 min? (y/n)",
+	MsgGenerateSavePrompt:  "Save this recipe to your collection? (y/n)",
+	MsgYes:                 "y",
+	MsgNo:                  "n",
 }

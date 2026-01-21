@@ -68,6 +68,17 @@ const (
 	MsgPromptIngredient  = "prompt.ingredient"
 	MsgPromptStep        = "prompt.step"
 	MsgPromptTags        = "prompt.tags"
+
+	// Interactive generate prompts
+	MsgGenerateHeader      = "generate.header"
+	MsgGeneratePrompt      = "generate.prompt"
+	MsgGenerateIngredients = "generate.ingredients"
+	MsgGenerateCuisine     = "generate.cuisine"
+	MsgGenerateVegetarian  = "generate.vegetarian"
+	MsgGenerateQuick       = "generate.quick"
+	MsgGenerateSavePrompt  = "generate.save_prompt"
+	MsgYes                 = "yes"
+	MsgNo                  = "no"
 )
 
 // Supported languages

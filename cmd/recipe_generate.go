@@ -1,12 +1,15 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strings"
 
 	"recipe_box/internal/ai"
 	"recipe_box/internal/config"
 	"recipe_box/internal/i18n"
+	"recipe_box/internal/recipe"
 	"recipe_box/internal/storage"
 	"recipe_box/internal/ui"
 
@@ -14,6 +17,9 @@ import (
 )
 
 const lastGeneratedFile = "last_generated.json"
+
+// IsInteractive indicates whether we're running in interactive REPL mode
+var IsInteractive bool
 
 var (
 	generatePrompt      string
@@ -64,6 +70,20 @@ func runRecipeGenerate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Check if any flags were provided
+	flagsProvided := cmd.Flags().Changed("prompt") ||
+		cmd.Flags().Changed("ingredients") ||
+		cmd.Flags().Changed("cuisine") ||
+		cmd.Flags().Changed("vegetarian") ||
+		cmd.Flags().Changed("quick")
+
+	// If in interactive mode and no flags provided, prompt for options
+	if IsInteractive && !flagsProvided {
+		if err := promptForGenerateOptions(); err != nil {
+			return err
+		}
+	}
+
 	// Parse ingredients
 	var ingredients []string
 	if generateIngredients != "" {
@@ -85,9 +105,10 @@ func runRecipeGenerate(cmd *cobra.Command, args []string) error {
 		Language:    i18n.GetLanguage(),
 	}
 
+	fmt.Println()
 	ui.LabelPrintf("%s\n", i18n.T(i18n.MsgRecipeGenerating))
 
-	recipe, err := client.GenerateRecipe(opts)
+	generatedRecipe, err := client.GenerateRecipe(opts)
 	if err != nil {
 		return fmt.Errorf("failed to generate recipe: %w", err)
 	}
@@ -98,14 +119,115 @@ func runRecipeGenerate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to init storage: %w", err)
 	}
 
-	if err := store.Save(lastGeneratedFile, recipe); err != nil {
+	if err := store.Save(lastGeneratedFile, generatedRecipe); err != nil {
 		return fmt.Errorf("failed to save generated recipe: %w", err)
 	}
 
 	fmt.Println()
-	printRecipe(recipe)
-	fmt.Println()
-	ui.LabelPrintf("%s\n", i18n.T(i18n.MsgRecipeSaveHint))
+	printRecipe(generatedRecipe)
+
+	// If in interactive mode, prompt to save
+	if IsInteractive {
+		fmt.Println()
+		if promptYesNo(i18n.T(i18n.MsgGenerateSavePrompt)) {
+			if err := saveGeneratedRecipe(store, generatedRecipe); err != nil {
+				return err
+			}
+		}
+	} else {
+		fmt.Println()
+		ui.LabelPrintf("%s\n", i18n.T(i18n.MsgRecipeSaveHint))
+	}
+
+	// Reset flags for next interactive use
+	resetGenerateFlags()
 
 	return nil
+}
+
+func promptForGenerateOptions() error {
+	reader := bufio.NewReader(os.Stdin)
+
+	header := i18n.T(i18n.MsgGenerateHeader)
+	ui.TitlePrintf("%s\n", header)
+	fmt.Println(strings.Repeat("=", len(header)))
+	fmt.Println()
+
+	// Recipe prompt (main request)
+	ui.LabelPrintf("%s: ", i18n.T(i18n.MsgGeneratePrompt))
+	prompt, err := reader.ReadString('\n')
+	if err != nil {
+		return err
+	}
+	generatePrompt = strings.TrimSpace(prompt)
+
+	// Ingredients
+	ui.LabelPrintf("%s: ", i18n.T(i18n.MsgGenerateIngredients))
+	ingredients, err := reader.ReadString('\n')
+	if err != nil {
+		return err
+	}
+	generateIngredients = strings.TrimSpace(ingredients)
+
+	// Cuisine
+	ui.LabelPrintf("%s: ", i18n.T(i18n.MsgGenerateCuisine))
+	cuisine, err := reader.ReadString('\n')
+	if err != nil {
+		return err
+	}
+	generateCuisine = strings.TrimSpace(cuisine)
+
+	// Vegetarian
+	ui.LabelPrintf("%s ", i18n.T(i18n.MsgGenerateVegetarian))
+	vegStr, err := reader.ReadString('\n')
+	if err != nil {
+		return err
+	}
+	generateVegetarian = isYes(strings.TrimSpace(vegStr))
+
+	// Quick
+	ui.LabelPrintf("%s ", i18n.T(i18n.MsgGenerateQuick))
+	quickStr, err := reader.ReadString('\n')
+	if err != nil {
+		return err
+	}
+	generateQuick = isYes(strings.TrimSpace(quickStr))
+
+	return nil
+}
+
+func promptYesNo(question string) bool {
+	reader := bufio.NewReader(os.Stdin)
+	ui.LabelPrintf("%s ", question)
+	answer, _ := reader.ReadString('\n')
+	return isYes(strings.TrimSpace(answer))
+}
+
+func isYes(s string) bool {
+	s = strings.ToLower(s)
+	yes := strings.ToLower(i18n.T(i18n.MsgYes))
+	return s == yes || s == "y" || s == "yes" || s == "j" || s == "ja"
+}
+
+func saveGeneratedRecipe(store *storage.Storage, r *recipe.Recipe) error {
+	svc := recipe.NewService(store)
+	if err := svc.Add(r); err != nil {
+		return fmt.Errorf("failed to save recipe: %w", err)
+	}
+
+	// Remove the last_generated file
+	if err := store.Delete(lastGeneratedFile); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: could not clean up temporary file: %v\n", err)
+	}
+
+	ui.SuccessPrintf(i18n.T(i18n.MsgRecipeSaved)+"\n", r.Title, r.ID)
+	return nil
+}
+
+func resetGenerateFlags() {
+	generatePrompt = ""
+	generateIngredients = ""
+	generateCuisine = ""
+	generateVegetarian = false
+	generateQuick = false
 }
