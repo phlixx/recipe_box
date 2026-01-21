@@ -2,7 +2,7 @@
 
 ## Current Focus
 
-**Iteration 1: Foundation** - Config system and storage infrastructure.
+**Iteration 2: Recipe CRUD** - Manual recipe management.
 
 ## Blockers
 
@@ -11,9 +11,10 @@ None.
 ## Handoff Notes
 
 **Last session (2025-01-21)**:
-- Defined product spec (PRODUCT.md) with 5 use cases
-- Resolved open questions: `~/.recipe_box/`, config file for API key, metric only
-- Created iteration plan (ITERATIONS.md) - 5 iterations for MVP
-- Recorded decisions in DECISIONS.md (ADR-004, 005, 006)
+- Completed Iteration 1: Foundation
+- Created config system (`~/.recipe_box/config.json`)
+- Created storage layer for JSON persistence
+- Created recipe data model
+- Implemented `config set` and `config get` commands
 
-**Next**: Start Iteration 1 - build config system and storage layer.
+**Next**: Start Iteration 2 - recipe add/list/view/delete commands.

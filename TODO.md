@@ -2,17 +2,15 @@
 
 See `ITERATIONS.md` for full iteration plan.
 
-## Current: Iteration 1 - Foundation
+## Current: Iteration 2 - Recipe CRUD
 
-- [ ] Config system (`~/.recipe_box/config.json`)
-- [ ] `config set <key> <value>` command
-- [ ] `config get <key>` command
-- [ ] Storage layer for JSON persistence
-- [ ] Recipe data model (`internal/recipe/`)
-
-## Up Next: Iteration 2 - Recipe CRUD
-
-- [ ] `recipe add` command
+- [ ] `recipe add` command (interactive prompts)
 - [ ] `recipe list` command
 - [ ] `recipe view <id>` command
 - [ ] `recipe delete <id>` command
+
+## Up Next: Iteration 3 - AI Generation
+
+- [ ] Claude API client (`internal/ai/`)
+- [ ] `recipe generate` command
+- [ ] `recipe save` command
