@@ -13,29 +13,30 @@ import (
 )
 
 const (
-	apiURL     = "https://api.anthropic.com/v1/messages"
-	apiVersion = "2023-06-01"
-	model      = "claude-sonnet-4-20250514"
+	defaultOllamaURL   = "http://localhost:11434/api/chat"
+	defaultOllamaModel = "llama3.2"
 )
 
 var (
-	ErrNoAPIKey       = errors.New("API key not configured - run: recipe_box config set api_key <your-key>")
-	ErrGenerateFailed = errors.New("failed to generate recipe")
+	ErrOllamaNotRunning = errors.New("Ollama not running - start it with: ollama serve")
+	ErrGenerateFailed   = errors.New("failed to generate recipe")
 )
 
 type Client struct {
-	apiKey     string
+	baseURL    string
+	model      string
 	httpClient *http.Client
 }
 
-func NewClient(apiKey string) (*Client, error) {
-	if apiKey == "" {
-		return nil, ErrNoAPIKey
+func NewClient(model string) *Client {
+	if model == "" {
+		model = defaultOllamaModel
 	}
 	return &Client{
-		apiKey:     apiKey,
+		baseURL:    defaultOllamaURL,
+		model:      model,
 		httpClient: &http.Client{},
-	}, nil
+	}
 }
 
 type GenerateOptions struct {
@@ -49,10 +50,10 @@ type GenerateOptions struct {
 func (c *Client) GenerateRecipe(opts GenerateOptions) (*recipe.Recipe, error) {
 	prompt := buildPrompt(opts)
 
-	reqBody := messagesRequest{
-		Model:     model,
-		MaxTokens: 2048,
-		Messages: []message{
+	reqBody := ollamaRequest{
+		Model:  c.model,
+		Stream: false,
+		Messages: []ollamaMessage{
 			{Role: "user", Content: prompt},
 		},
 	}
@@ -62,18 +63,16 @@ func (c *Client) GenerateRecipe(opts GenerateOptions) (*recipe.Recipe, error) {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", apiURL, bytes.NewReader(body))
+	req, err := http.NewRequest("POST", c.baseURL, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-api-key", c.apiKey)
-	req.Header.Set("anthropic-version", apiVersion)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("API request failed: %w", err)
+		return nil, fmt.Errorf("%w: %v", ErrOllamaNotRunning, err)
 	}
 	defer resp.Body.Close()
 
@@ -86,16 +85,12 @@ func (c *Client) GenerateRecipe(opts GenerateOptions) (*recipe.Recipe, error) {
 		return nil, fmt.Errorf("%w: %s (status %d)", ErrGenerateFailed, string(respBody), resp.StatusCode)
 	}
 
-	var messagesResp messagesResponse
-	if err := json.Unmarshal(respBody, &messagesResp); err != nil {
+	var ollamaResp ollamaResponse
+	if err := json.Unmarshal(respBody, &ollamaResp); err != nil {
 		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	if len(messagesResp.Content) == 0 {
-		return nil, fmt.Errorf("%w: empty response", ErrGenerateFailed)
-	}
-
-	return parseRecipeFromResponse(messagesResp.Content[0].Text)
+	return parseRecipeFromResponse(ollamaResp.Message.Content)
 }
 
 func buildPrompt(opts GenerateOptions) string {
@@ -128,7 +123,7 @@ func buildPrompt(opts GenerateOptions) string {
 
 	return fmt.Sprintf(`Generate a recipe for: %s%s
 
-Return ONLY valid JSON in this exact format (no markdown, no explanation):
+Return ONLY valid JSON in this exact format (no markdown, no explanation, no extra text):
 {
   "title": "Recipe Title",
   "description": "Brief description of the dish",
@@ -147,11 +142,12 @@ Return ONLY valid JSON in this exact format (no markdown, no explanation):
 }
 
 Categories for ingredients must be one of: produce, dairy, meat, pantry, frozen, other
-Units should be metric where appropriate (g, ml, etc.) or common cooking units (cups, tbsp, tsp)`, userRequest, constraintText)
+Units should be metric where appropriate (g, ml, etc.) or common cooking units (cups, tbsp, tsp)
+
+IMPORTANT: Return ONLY the JSON object, nothing else.`, userRequest, constraintText)
 }
 
 func parseRecipeFromResponse(text string) (*recipe.Recipe, error) {
-	// Try to extract JSON from the response (Claude might wrap it)
 	text = strings.TrimSpace(text)
 
 	// If wrapped in markdown code block, extract it
@@ -171,6 +167,13 @@ func parseRecipeFromResponse(text string) (*recipe.Recipe, error) {
 		text = strings.Join(jsonLines, "\n")
 	}
 
+	// Try to find JSON object if there's extra text
+	startIdx := strings.Index(text, "{")
+	endIdx := strings.LastIndex(text, "}")
+	if startIdx != -1 && endIdx != -1 && endIdx > startIdx {
+		text = text[startIdx : endIdx+1]
+	}
+
 	var r recipe.Recipe
 	if err := json.Unmarshal([]byte(text), &r); err != nil {
 		return nil, fmt.Errorf("failed to parse recipe JSON: %w\nResponse was: %s", err, text)
@@ -182,23 +185,18 @@ func parseRecipeFromResponse(text string) (*recipe.Recipe, error) {
 	return &r, nil
 }
 
-// API request/response types
-type messagesRequest struct {
-	Model     string    `json:"model"`
-	MaxTokens int       `json:"max_tokens"`
-	Messages  []message `json:"messages"`
+// Ollama API types
+type ollamaRequest struct {
+	Model    string          `json:"model"`
+	Messages []ollamaMessage `json:"messages"`
+	Stream   bool            `json:"stream"`
 }
 
-type message struct {
+type ollamaMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
 
-type messagesResponse struct {
-	Content []contentBlock `json:"content"`
-}
-
-type contentBlock struct {
-	Type string `json:"type"`
-	Text string `json:"text"`
+type ollamaResponse struct {
+	Message ollamaMessage `json:"message"`
 }

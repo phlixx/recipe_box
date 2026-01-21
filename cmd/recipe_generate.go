@@ -24,7 +24,10 @@ var (
 var recipeGenerateCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Generate a recipe using AI",
-	Long: `Generate a recipe using Claude AI.
+	Long: `Generate a recipe using Ollama (local AI).
+
+Requires Ollama to be running: ollama serve
+Default model: llama3.2 (change with: recipe_box config set model <name>)
 
 Examples:
   recipe_box recipe generate --prompt "quick pasta dish"
@@ -45,22 +48,16 @@ func init() {
 }
 
 func runRecipeGenerate(cmd *cobra.Command, args []string) error {
-	// Get API key from config
+	// Get optional model from config
 	cfg, err := config.New()
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	apiKey, err := cfg.Get("api_key")
-	if err != nil {
-		return ai.ErrNoAPIKey
-	}
+	model, _ := cfg.Get("model") // Empty string uses default
 
 	// Create AI client
-	client, err := ai.NewClient(apiKey)
-	if err != nil {
-		return err
-	}
+	client := ai.NewClient(model)
 
 	// Parse ingredients
 	var ingredients []string

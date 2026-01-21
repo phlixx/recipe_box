@@ -98,20 +98,34 @@ Use **`~/.recipe_box/`** as the storage directory.
 
 ---
 
-## ADR-005: API Key Management
+## ADR-005: AI Provider
 
 **Date**: 2025-01-21
-**Status**: Accepted
+**Status**: Accepted (Updated 2026-01-21)
 
 ### Context
-Need to store Claude API key for recipe generation.
+Need an AI provider for recipe generation. Options considered:
+- Claude API (Anthropic) - requires paid API key
+- OpenAI API - requires paid API key
+- Ollama (local) - free, runs locally
 
 ### Decision
-Store API key in **config file** (`~/.recipe_box/config.json`).
+Use **Ollama** for local AI generation.
 
 ### Consequences
-- **Pros**: Persistent, user-friendly, can store other settings
-- **Cons**: Security consideration (file permissions), need config commands
+- **Pros**:
+  - No API costs
+  - Works offline
+  - Privacy (data stays local)
+  - No API key management needed
+- **Cons**:
+  - Requires Ollama installation
+  - Uses local compute resources
+  - Model quality varies
+
+### Configuration
+- Default model: `llama3.2`
+- Change with: `recipe_box config set model <name>`
 
 ---
 

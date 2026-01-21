@@ -7,20 +7,17 @@ import (
 	"recipe_box/internal/recipe"
 )
 
-func TestNewClient_NoAPIKey(t *testing.T) {
-	_, err := NewClient("")
-	if err != ErrNoAPIKey {
-		t.Errorf("expected ErrNoAPIKey, got %v", err)
+func TestNewClient_DefaultModel(t *testing.T) {
+	client := NewClient("")
+	if client.model != defaultOllamaModel {
+		t.Errorf("expected default model '%s', got '%s'", defaultOllamaModel, client.model)
 	}
 }
 
-func TestNewClient_WithAPIKey(t *testing.T) {
-	client, err := NewClient("test-key")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if client.apiKey != "test-key" {
-		t.Errorf("expected apiKey 'test-key', got '%s'", client.apiKey)
+func TestNewClient_CustomModel(t *testing.T) {
+	client := NewClient("mistral")
+	if client.model != "mistral" {
+		t.Errorf("expected model 'mistral', got '%s'", client.model)
 	}
 }
 
@@ -126,6 +123,30 @@ func TestParseRecipeFromResponse_MarkdownWrapped(t *testing.T) {
 
 	if r.Title != "Wrapped Recipe" {
 		t.Errorf("expected title 'Wrapped Recipe', got '%s'", r.Title)
+	}
+}
+
+func TestParseRecipeFromResponse_WithExtraText(t *testing.T) {
+	jsonResponse := `Here is your recipe:
+{
+	"title": "Extra Text Recipe",
+	"description": "Test",
+	"servings": 2,
+	"prep_time": 5,
+	"cook_time": 10,
+	"ingredients": [],
+	"steps": ["Do it"],
+	"tags": []
+}
+Enjoy!`
+
+	r, err := parseRecipeFromResponse(jsonResponse)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if r.Title != "Extra Text Recipe" {
+		t.Errorf("expected title 'Extra Text Recipe', got '%s'", r.Title)
 	}
 }
 

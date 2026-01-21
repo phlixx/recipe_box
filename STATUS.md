@@ -12,11 +12,14 @@ None.
 
 **Last session (2026-01-21)**:
 - Completed Iteration 3: AI Generation
-- Created Claude API client (`internal/ai/claude.go`)
+- Switched from Claude API to Ollama (local AI, no cost)
+- Created Ollama client (`internal/ai/ollama.go`)
 - Implemented `recipe generate` with flags (--prompt, --ingredients, --cuisine, --vegetarian, --quick)
 - Implemented `recipe save` to save last generated recipe
-- Structured JSON output parsing for recipes
-- Added 8 unit tests for AI client (prompt building, response parsing)
-- All 23 tests passing
+- Default model: llama3.2 (configurable via `config set model`)
+- Updated ADR-005 to document Ollama choice
+- 9 unit tests for AI client (24 total tests passing)
+
+**To use**: Install Ollama, run `ollama pull llama3.2`, then `ollama serve`
 
 **Next**: Start Iteration 4 - Shopping list commands.
