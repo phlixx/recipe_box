@@ -6,6 +6,7 @@ import (
 	"recipe_box/internal/i18n"
 	"recipe_box/internal/recipe"
 	"recipe_box/internal/storage"
+	"recipe_box/internal/ui"
 
 	"github.com/spf13/cobra"
 )
@@ -34,18 +35,18 @@ func runRecipeList(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(recipes) == 0 {
-		fmt.Println(i18n.T(i18n.MsgRecipeListEmpty))
+		ui.LabelPrintf("%s\n", i18n.T(i18n.MsgRecipeListEmpty))
 		return nil
 	}
 
-	fmt.Printf(i18n.T(i18n.MsgRecipeListFound)+"\n\n", len(recipes))
+	ui.TitlePrintf(i18n.T(i18n.MsgRecipeListFound)+"\n\n", len(recipes))
 	for _, r := range recipes {
 		totalTime := r.PrepTime + r.CookTime
-		fmt.Printf("  %s  %s\n", r.ID, r.Title)
+		fmt.Printf("  %s  %s\n", ui.IDSprint(r.ID), r.Title)
 		if totalTime > 0 {
-			fmt.Printf("         %d %s, %d %s\n", r.Servings, i18n.T(i18n.MsgServings), totalTime, i18n.T(i18n.MsgMinutes))
+			ui.LabelPrintf("         %d %s, %d %s\n", r.Servings, i18n.T(i18n.MsgServings), totalTime, i18n.T(i18n.MsgMinutes))
 		} else {
-			fmt.Printf("         %d %s\n", r.Servings, i18n.T(i18n.MsgServings))
+			ui.LabelPrintf("         %d %s\n", r.Servings, i18n.T(i18n.MsgServings))
 		}
 	}
 

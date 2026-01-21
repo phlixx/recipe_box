@@ -6,6 +6,7 @@ import (
 	"recipe_box/internal/i18n"
 	"recipe_box/internal/shopping"
 	"recipe_box/internal/storage"
+	"recipe_box/internal/ui"
 
 	"github.com/spf13/cobra"
 )
@@ -32,6 +33,6 @@ func runShoppingClear(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to clear shopping list: %w", err)
 	}
 
-	fmt.Println(i18n.T(i18n.MsgShoppingCleared))
+	ui.SuccessPrintf("%s\n", i18n.T(i18n.MsgShoppingCleared))
 	return nil
 }

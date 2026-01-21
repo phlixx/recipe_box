@@ -7,6 +7,7 @@ import (
 	"recipe_box/internal/i18n"
 	"recipe_box/internal/recipe"
 	"recipe_box/internal/storage"
+	"recipe_box/internal/ui"
 
 	"github.com/spf13/cobra"
 )
@@ -46,6 +47,6 @@ func runRecipeDelete(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to delete recipe: %w", err)
 	}
 
-	fmt.Printf(i18n.T(i18n.MsgRecipeDeleted)+"\n", r.Title)
+	ui.SuccessPrintf(i18n.T(i18n.MsgRecipeDeleted)+"\n", r.Title)
 	return nil
 }

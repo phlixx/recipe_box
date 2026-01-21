@@ -7,6 +7,7 @@ import (
 	"recipe_box/internal/recipe"
 	"recipe_box/internal/shopping"
 	"recipe_box/internal/storage"
+	"recipe_box/internal/ui"
 
 	"github.com/spf13/cobra"
 )
@@ -50,9 +51,10 @@ func runShoppingGenerate(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to add ingredients from %s: %w", id, err)
 		}
 
-		fmt.Printf(i18n.T(i18n.MsgShoppingAdded)+"\n", len(r.Ingredients), r.Title)
+		ui.SuccessPrintf(i18n.T(i18n.MsgShoppingAdded)+"\n", len(r.Ingredients), r.Title)
 	}
 
-	fmt.Printf("\n%s\n", i18n.T(i18n.MsgShoppingShowHint))
+	fmt.Println()
+	ui.LabelPrintf("%s\n", i18n.T(i18n.MsgShoppingShowHint))
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 	"recipe_box/internal/i18n"
 	"recipe_box/internal/recipe"
 	"recipe_box/internal/storage"
+	"recipe_box/internal/ui"
 
 	"github.com/spf13/cobra"
 )
@@ -46,7 +47,7 @@ func runRecipeView(cmd *cobra.Command, args []string) error {
 }
 
 func printRecipe(r *recipe.Recipe) {
-	fmt.Printf("%s\n", r.Title)
+	ui.TitlePrintf("%s\n", r.Title)
 	fmt.Println(strings.Repeat("=", len(r.Title)))
 	fmt.Println()
 
@@ -55,24 +56,30 @@ func printRecipe(r *recipe.Recipe) {
 	}
 
 	// Metadata
-	fmt.Printf("%s: %d\n", i18n.T(i18n.MsgLabelServings), r.Servings)
+	ui.LabelPrintf("%s: ", i18n.T(i18n.MsgLabelServings))
+	fmt.Printf("%d\n", r.Servings)
 	if r.PrepTime > 0 {
-		fmt.Printf("%s: %d %s\n", i18n.T(i18n.MsgLabelPrepTime), r.PrepTime, i18n.T(i18n.MsgMinutes))
+		ui.LabelPrintf("%s: ", i18n.T(i18n.MsgLabelPrepTime))
+		fmt.Printf("%d %s\n", r.PrepTime, i18n.T(i18n.MsgMinutes))
 	}
 	if r.CookTime > 0 {
-		fmt.Printf("%s: %d %s\n", i18n.T(i18n.MsgLabelCookTime), r.CookTime, i18n.T(i18n.MsgMinutes))
+		ui.LabelPrintf("%s: ", i18n.T(i18n.MsgLabelCookTime))
+		fmt.Printf("%d %s\n", r.CookTime, i18n.T(i18n.MsgMinutes))
 	}
 	if r.PrepTime > 0 || r.CookTime > 0 {
-		fmt.Printf("%s: %d %s\n", i18n.T(i18n.MsgLabelTotalTime), r.PrepTime+r.CookTime, i18n.T(i18n.MsgMinutes))
+		ui.LabelPrintf("%s: ", i18n.T(i18n.MsgLabelTotalTime))
+		fmt.Printf("%d %s\n", r.PrepTime+r.CookTime, i18n.T(i18n.MsgMinutes))
 	}
 
 	// Tags
 	if len(r.Tags) > 0 {
-		fmt.Printf("%s: %s\n", i18n.T(i18n.MsgLabelTags), strings.Join(r.Tags, ", "))
+		ui.LabelPrintf("%s: ", i18n.T(i18n.MsgLabelTags))
+		fmt.Printf("%s\n", strings.Join(r.Tags, ", "))
 	}
 
 	// Ingredients
-	fmt.Printf("\n%s:\n", i18n.T(i18n.MsgLabelIngredients))
+	fmt.Println()
+	ui.SectionPrintf("%s:\n", i18n.T(i18n.MsgLabelIngredients))
 	for _, ing := range r.Ingredients {
 		if ing.Quantity > 0 && ing.Unit != "" {
 			fmt.Printf("  - %.4g %s %s\n", ing.Quantity, ing.Unit, ing.Name)
@@ -84,10 +91,11 @@ func printRecipe(r *recipe.Recipe) {
 	}
 
 	// Steps
-	fmt.Printf("\n%s:\n", i18n.T(i18n.MsgLabelSteps))
+	fmt.Println()
+	ui.SectionPrintf("%s:\n", i18n.T(i18n.MsgLabelSteps))
 	for i, step := range r.Steps {
 		fmt.Printf("  %d. %s\n", i+1, step)
 	}
 
-	fmt.Printf("\n[ID: %s]\n", r.ID)
+	fmt.Printf("\n[ID: %s]\n", ui.IDSprint(r.ID))
 }

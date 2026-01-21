@@ -6,6 +6,7 @@ import (
 
 	"recipe_box/internal/config"
 	"recipe_box/internal/i18n"
+	"recipe_box/internal/ui"
 
 	"github.com/spf13/cobra"
 )
@@ -53,7 +54,7 @@ var configSetCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf(i18n.T(i18n.MsgConfigSet)+"\n", args[0], args[1])
+		ui.SuccessPrintf(i18n.T(i18n.MsgConfigSet)+"\n", args[0], args[1])
 		return nil
 	},
 }

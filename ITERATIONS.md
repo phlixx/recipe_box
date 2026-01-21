@@ -178,19 +178,19 @@ Iter 8: Localization+     → Complete all strings, units
 
 ---
 
-## Iteration 6: Interactive Mode
+## Iteration 6: Interactive Mode ✅
 
 **Goal**: REPL as default mode with colored output
 
 **Deliverables**:
-- [ ] Interactive mode when running `recipe_box` (no args)
-- [ ] Emoji prompt: `🍳 > `
-- [ ] Tab completion for commands
-- [ ] Tab completion for recipe IDs
-- [ ] Command history (arrow keys)
-- [ ] `exit` command to quit
-- [ ] Colored output (headers, categories, success/error)
-- [ ] Traditional CLI still works (`recipe_box recipe list`)
+- [x] Interactive mode when running `recipe_box` (no args)
+- [x] Emoji prompt: `🍳 > `
+- [x] Tab completion for commands
+- [x] Tab completion for recipe IDs
+- [x] Command history (arrow keys)
+- [x] `exit` command to quit
+- [x] Colored output (headers, categories, success/error)
+- [x] Traditional CLI still works (`recipe_box recipe list`)
 
 **Exit Criteria**:
 ```bash
@@ -284,11 +284,11 @@ Verfügbare Befehle:
 
 ## Summary - Post-MVP Phase 1
 
-| Iter | Focus | Key Features |
-|------|-------|--------------|
-| 6 | Interactive Mode | REPL, autocomplete, colors |
-| 7 | Servings | Scale ingredients up/down |
-| 8 | Localization+ | Complete translations, units |
+| Iter | Focus | Key Features | Status |
+|------|-------|--------------|--------|
+| 6 | Interactive Mode | REPL, autocomplete, colors | ✅ Done |
+| 7 | Servings | Scale ingredients up/down | |
+| 8 | Localization+ | Complete translations, units | |
 
 **Total: 3 iterations for v0.2**
 

@@ -8,6 +8,7 @@ import (
 	"recipe_box/internal/i18n"
 	"recipe_box/internal/shopping"
 	"recipe_box/internal/storage"
+	"recipe_box/internal/ui"
 
 	"github.com/spf13/cobra"
 )
@@ -36,8 +37,8 @@ func runShoppingShow(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(list.Items) == 0 {
-		fmt.Println(i18n.T(i18n.MsgShoppingEmpty))
-		fmt.Println(i18n.T(i18n.MsgShoppingEmptyHint))
+		ui.LabelPrintf("%s\n", i18n.T(i18n.MsgShoppingEmpty))
+		ui.LabelPrintf("%s\n", i18n.T(i18n.MsgShoppingEmptyHint))
 		return nil
 	}
 
@@ -50,12 +51,13 @@ func runShoppingShow(cmd *cobra.Command, args []string) error {
 	}
 	sort.Strings(categories)
 
-	fmt.Printf(i18n.T(i18n.MsgShoppingListHeader)+"\n", len(list.Items))
+	ui.TitlePrintf(i18n.T(i18n.MsgShoppingListHeader)+"\n", len(list.Items))
 	fmt.Println(strings.Repeat("=", 30))
 
 	for _, cat := range categories {
 		items := groups[cat]
-		fmt.Printf("\n%s:\n", i18n.Category(cat))
+		fmt.Println()
+		ui.CategoryPrintf("%s:\n", i18n.Category(cat))
 		for _, item := range items {
 			fmt.Printf("  - %s\n", formatItem(item))
 		}

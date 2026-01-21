@@ -7,6 +7,7 @@ import (
 	"recipe_box/internal/i18n"
 	internalRecipe "recipe_box/internal/recipe"
 	"recipe_box/internal/storage"
+	"recipe_box/internal/ui"
 
 	"github.com/spf13/cobra"
 )
@@ -52,6 +53,6 @@ func runRecipeSave(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(os.Stderr, "Warning: could not clean up temporary file: %v\n", err)
 	}
 
-	fmt.Printf(i18n.T(i18n.MsgRecipeSaved)+"\n", recipe.Title, recipe.ID)
+	ui.SuccessPrintf(i18n.T(i18n.MsgRecipeSaved)+"\n", recipe.Title, recipe.ID)
 	return nil
 }

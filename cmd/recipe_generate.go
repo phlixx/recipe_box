@@ -8,6 +8,7 @@ import (
 	"recipe_box/internal/config"
 	"recipe_box/internal/i18n"
 	"recipe_box/internal/storage"
+	"recipe_box/internal/ui"
 
 	"github.com/spf13/cobra"
 )
@@ -84,7 +85,7 @@ func runRecipeGenerate(cmd *cobra.Command, args []string) error {
 		Language:    i18n.GetLanguage(),
 	}
 
-	fmt.Println(i18n.T(i18n.MsgRecipeGenerating))
+	ui.LabelPrintf("%s\n", i18n.T(i18n.MsgRecipeGenerating))
 
 	recipe, err := client.GenerateRecipe(opts)
 	if err != nil {
@@ -103,7 +104,8 @@ func runRecipeGenerate(cmd *cobra.Command, args []string) error {
 
 	fmt.Println()
 	printRecipe(recipe)
-	fmt.Printf("\n%s\n", i18n.T(i18n.MsgRecipeSaveHint))
+	fmt.Println()
+	ui.LabelPrintf("%s\n", i18n.T(i18n.MsgRecipeSaveHint))
 
 	return nil
 }

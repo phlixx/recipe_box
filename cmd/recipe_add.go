@@ -10,6 +10,7 @@ import (
 	"recipe_box/internal/i18n"
 	"recipe_box/internal/recipe"
 	"recipe_box/internal/storage"
+	"recipe_box/internal/ui"
 
 	"github.com/spf13/cobra"
 )
@@ -29,24 +30,24 @@ func runRecipeAdd(cmd *cobra.Command, args []string) error {
 	reader := bufio.NewReader(os.Stdin)
 
 	header := i18n.T(i18n.MsgRecipeAddHeader)
-	fmt.Println(header)
+	ui.TitlePrintf("%s\n", header)
 	fmt.Println(strings.Repeat("=", len(header)))
 	fmt.Println()
 
 	// Title
-	title, err := prompt(reader, i18n.T(i18n.MsgPromptTitle))
+	title, err := readLine(reader, i18n.T(i18n.MsgPromptTitle))
 	if err != nil {
 		return err
 	}
 
 	// Description
-	description, err := prompt(reader, i18n.T(i18n.MsgPromptDescription))
+	description, err := readLine(reader, i18n.T(i18n.MsgPromptDescription))
 	if err != nil {
 		return err
 	}
 
 	// Servings
-	servingsStr, err := prompt(reader, i18n.T(i18n.MsgPromptServings))
+	servingsStr, err := readLine(reader, i18n.T(i18n.MsgPromptServings))
 	if err != nil {
 		return err
 	}
@@ -56,14 +57,14 @@ func runRecipeAdd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Prep time
-	prepTimeStr, err := prompt(reader, i18n.T(i18n.MsgPromptPrepTime))
+	prepTimeStr, err := readLine(reader, i18n.T(i18n.MsgPromptPrepTime))
 	if err != nil {
 		return err
 	}
 	prepTime, _ := strconv.Atoi(prepTimeStr)
 
 	// Cook time
-	cookTimeStr, err := prompt(reader, i18n.T(i18n.MsgPromptCookTime))
+	cookTimeStr, err := readLine(reader, i18n.T(i18n.MsgPromptCookTime))
 	if err != nil {
 		return err
 	}
@@ -73,7 +74,7 @@ func runRecipeAdd(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\n%s:\n", i18n.T(i18n.MsgRecipeAddIngredients))
 	var ingredients []recipe.Ingredient
 	for {
-		line, err := prompt(reader, "  "+i18n.T(i18n.MsgPromptIngredient))
+		line, err := readLine(reader, "  "+i18n.T(i18n.MsgPromptIngredient))
 		if err != nil {
 			return err
 		}
@@ -88,7 +89,7 @@ func runRecipeAdd(cmd *cobra.Command, args []string) error {
 	var steps []string
 	stepNum := 1
 	for {
-		line, err := prompt(reader, fmt.Sprintf("  "+i18n.T(i18n.MsgPromptStep), stepNum))
+		line, err := readLine(reader, fmt.Sprintf("  "+i18n.T(i18n.MsgPromptStep), stepNum))
 		if err != nil {
 			return err
 		}
@@ -100,7 +101,7 @@ func runRecipeAdd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Tags
-	tagsStr, err := prompt(reader, i18n.T(i18n.MsgPromptTags))
+	tagsStr, err := readLine(reader, i18n.T(i18n.MsgPromptTags))
 	if err != nil {
 		return err
 	}
@@ -141,11 +142,12 @@ func runRecipeAdd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to save recipe: %w", err)
 	}
 
-	fmt.Printf("\n"+i18n.T(i18n.MsgRecipeAdded)+"\n", r.Title, r.ID)
+	fmt.Println()
+	ui.SuccessPrintf(i18n.T(i18n.MsgRecipeAdded)+"\n", r.Title, r.ID)
 	return nil
 }
 
-func prompt(reader *bufio.Reader, label string) (string, error) {
+func readLine(reader *bufio.Reader, label string) (string, error) {
 	fmt.Printf("%s: ", label)
 	line, err := reader.ReadString('\n')
 	if err != nil {
