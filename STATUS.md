@@ -2,7 +2,7 @@
 
 ## Current Focus
 
-**Iteration 2: Recipe CRUD** - Manual recipe management.
+**Iteration 3: AI Generation** - Claude API integration.
 
 ## Blockers
 
@@ -10,11 +10,12 @@ None.
 
 ## Handoff Notes
 
-**Last session (2025-01-21)**:
-- Completed Iteration 1: Foundation
-- Created config system (`~/.recipe_box/config.json`)
-- Created storage layer for JSON persistence
-- Created recipe data model
-- Implemented `config set` and `config get` commands
+**Last session (2026-01-21)**:
+- Completed Iteration 2: Recipe CRUD
+- Created recipe service with Storage interface for testability
+- Implemented `recipe add` (interactive prompts)
+- Implemented `recipe list`, `recipe view <id>`, `recipe delete <id>`
+- Added 6 unit tests for recipe service
+- All 15 tests passing
 
-**Next**: Start Iteration 2 - recipe add/list/view/delete commands.
+**Next**: Start Iteration 3 - Claude API client and `recipe generate` command.
