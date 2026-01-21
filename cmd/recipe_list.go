@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"recipe_box/internal/i18n"
 	"recipe_box/internal/recipe"
 	"recipe_box/internal/storage"
 
@@ -33,18 +34,18 @@ func runRecipeList(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(recipes) == 0 {
-		fmt.Println("No recipes found. Use 'recipe_box recipe add' to add one.")
+		fmt.Println(i18n.T(i18n.MsgRecipeListEmpty))
 		return nil
 	}
 
-	fmt.Printf("Found %d recipe(s):\n\n", len(recipes))
+	fmt.Printf(i18n.T(i18n.MsgRecipeListFound)+"\n\n", len(recipes))
 	for _, r := range recipes {
 		totalTime := r.PrepTime + r.CookTime
 		fmt.Printf("  %s  %s\n", r.ID, r.Title)
 		if totalTime > 0 {
-			fmt.Printf("         %d servings, %d min\n", r.Servings, totalTime)
+			fmt.Printf("         %d %s, %d %s\n", r.Servings, i18n.T(i18n.MsgServings), totalTime, i18n.T(i18n.MsgMinutes))
 		} else {
-			fmt.Printf("         %d servings\n", r.Servings)
+			fmt.Printf("         %d %s\n", r.Servings, i18n.T(i18n.MsgServings))
 		}
 	}
 

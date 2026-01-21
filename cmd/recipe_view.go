@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"recipe_box/internal/i18n"
 	"recipe_box/internal/recipe"
 	"recipe_box/internal/storage"
 
@@ -35,7 +36,7 @@ func runRecipeView(cmd *cobra.Command, args []string) error {
 	r, err := svc.Get(id)
 	if err != nil {
 		if errors.Is(err, recipe.ErrNotFound) {
-			return fmt.Errorf("recipe %q not found", id)
+			return fmt.Errorf(i18n.T(i18n.MsgRecipeNotFound), id)
 		}
 		return fmt.Errorf("failed to get recipe: %w", err)
 	}
@@ -54,24 +55,24 @@ func printRecipe(r *recipe.Recipe) {
 	}
 
 	// Metadata
-	fmt.Printf("Servings: %d\n", r.Servings)
+	fmt.Printf("%s: %d\n", i18n.T(i18n.MsgLabelServings), r.Servings)
 	if r.PrepTime > 0 {
-		fmt.Printf("Prep time: %d min\n", r.PrepTime)
+		fmt.Printf("%s: %d %s\n", i18n.T(i18n.MsgLabelPrepTime), r.PrepTime, i18n.T(i18n.MsgMinutes))
 	}
 	if r.CookTime > 0 {
-		fmt.Printf("Cook time: %d min\n", r.CookTime)
+		fmt.Printf("%s: %d %s\n", i18n.T(i18n.MsgLabelCookTime), r.CookTime, i18n.T(i18n.MsgMinutes))
 	}
 	if r.PrepTime > 0 || r.CookTime > 0 {
-		fmt.Printf("Total time: %d min\n", r.PrepTime+r.CookTime)
+		fmt.Printf("%s: %d %s\n", i18n.T(i18n.MsgLabelTotalTime), r.PrepTime+r.CookTime, i18n.T(i18n.MsgMinutes))
 	}
 
 	// Tags
 	if len(r.Tags) > 0 {
-		fmt.Printf("Tags: %s\n", strings.Join(r.Tags, ", "))
+		fmt.Printf("%s: %s\n", i18n.T(i18n.MsgLabelTags), strings.Join(r.Tags, ", "))
 	}
 
 	// Ingredients
-	fmt.Println("\nIngredients:")
+	fmt.Printf("\n%s:\n", i18n.T(i18n.MsgLabelIngredients))
 	for _, ing := range r.Ingredients {
 		if ing.Quantity > 0 && ing.Unit != "" {
 			fmt.Printf("  - %.4g %s %s\n", ing.Quantity, ing.Unit, ing.Name)
@@ -83,7 +84,7 @@ func printRecipe(r *recipe.Recipe) {
 	}
 
 	// Steps
-	fmt.Println("\nSteps:")
+	fmt.Printf("\n%s:\n", i18n.T(i18n.MsgLabelSteps))
 	for i, step := range r.Steps {
 		fmt.Printf("  %d. %s\n", i+1, step)
 	}

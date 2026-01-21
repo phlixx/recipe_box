@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"recipe_box/internal/i18n"
 	internalRecipe "recipe_box/internal/recipe"
 	"recipe_box/internal/storage"
 
@@ -31,7 +32,7 @@ func runRecipeSave(cmd *cobra.Command, args []string) error {
 
 	// Load last generated recipe
 	if !store.Exists(lastGeneratedFile) {
-		return fmt.Errorf("no generated recipe to save - run 'recipe generate' first")
+		return fmt.Errorf(i18n.T(i18n.MsgRecipeNoGenerated))
 	}
 
 	var recipe internalRecipe.Recipe
@@ -51,6 +52,6 @@ func runRecipeSave(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(os.Stderr, "Warning: could not clean up temporary file: %v\n", err)
 	}
 
-	fmt.Printf("Saved recipe '%s' (%s)\n", recipe.Title, recipe.ID)
+	fmt.Printf(i18n.T(i18n.MsgRecipeSaved)+"\n", recipe.Title, recipe.ID)
 	return nil
 }

@@ -43,10 +43,16 @@ type GenerateOptions struct {
 	Ingredients []string
 	Cuisine     string
 	Vegetarian  bool
-	Quick       bool // under 30 min
+	Quick       bool   // under 30 min
+	Language    string // "en" or "de"
 }
 
 func (c *Client) GenerateRecipe(opts GenerateOptions) (*recipe.Recipe, error) {
+	// Default to English if not specified
+	if opts.Language == "" {
+		opts.Language = "en"
+	}
+
 	prompt := buildPrompt(opts)
 
 	reqBody := messagesRequest{
@@ -95,7 +101,7 @@ func (c *Client) GenerateRecipe(opts GenerateOptions) (*recipe.Recipe, error) {
 		return nil, fmt.Errorf("%w: empty response", ErrGenerateFailed)
 	}
 
-	return parseRecipeFromResponse(messagesResp.Content[0].Text)
+	return parseRecipeFromResponse(messagesResp.Content[0].Text, opts.Language)
 }
 
 func buildPrompt(opts GenerateOptions) string {
@@ -126,7 +132,15 @@ func buildPrompt(opts GenerateOptions) string {
 		constraintText = "\n\nConstraints:\n- " + strings.Join(constraints, "\n- ")
 	}
 
+	// Language instruction
+	langInstruction := "Write all text (title, description, ingredients, steps) in English."
+	if opts.Language == "de" {
+		langInstruction = "Write all text (title, description, ingredients, steps) in German (Deutsch)."
+	}
+
 	return fmt.Sprintf(`Generate a recipe for: %s%s
+
+%s
 
 Return ONLY valid JSON in this exact format (no markdown, no explanation):
 {
@@ -147,10 +161,10 @@ Return ONLY valid JSON in this exact format (no markdown, no explanation):
 }
 
 Categories for ingredients must be one of: produce, dairy, meat, pantry, frozen, other
-Units should be metric where appropriate (g, ml, etc.) or common cooking units (cups, tbsp, tsp)`, userRequest, constraintText)
+Units should be metric where appropriate (g, ml, etc.) or common cooking units (cups, tbsp, tsp)`, userRequest, constraintText, langInstruction)
 }
 
-func parseRecipeFromResponse(text string) (*recipe.Recipe, error) {
+func parseRecipeFromResponse(text string, language string) (*recipe.Recipe, error) {
 	// Try to extract JSON from the response (Claude might wrap it)
 	text = strings.TrimSpace(text)
 
@@ -177,7 +191,11 @@ func parseRecipeFromResponse(text string) (*recipe.Recipe, error) {
 	}
 
 	r.Source = recipe.SourceAI
-	r.Language = recipe.LangEN
+	if language == "de" {
+		r.Language = recipe.LangDE
+	} else {
+		r.Language = recipe.LangEN
+	}
 
 	return &r, nil
 }

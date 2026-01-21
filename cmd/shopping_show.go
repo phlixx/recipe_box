@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"recipe_box/internal/i18n"
 	"recipe_box/internal/shopping"
 	"recipe_box/internal/storage"
 
@@ -35,8 +36,8 @@ func runShoppingShow(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(list.Items) == 0 {
-		fmt.Println("Shopping list is empty.")
-		fmt.Println("Use 'recipe_box shopping generate <recipe-id>' to add items.")
+		fmt.Println(i18n.T(i18n.MsgShoppingEmpty))
+		fmt.Println(i18n.T(i18n.MsgShoppingEmptyHint))
 		return nil
 	}
 
@@ -49,25 +50,18 @@ func runShoppingShow(cmd *cobra.Command, args []string) error {
 	}
 	sort.Strings(categories)
 
-	fmt.Printf("Shopping List (%d items)\n", len(list.Items))
+	fmt.Printf(i18n.T(i18n.MsgShoppingListHeader)+"\n", len(list.Items))
 	fmt.Println(strings.Repeat("=", 30))
 
 	for _, cat := range categories {
 		items := groups[cat]
-		fmt.Printf("\n%s:\n", formatCategory(cat))
+		fmt.Printf("\n%s:\n", i18n.Category(cat))
 		for _, item := range items {
 			fmt.Printf("  - %s\n", formatItem(item))
 		}
 	}
 
 	return nil
-}
-
-func formatCategory(cat string) string {
-	if cat == "" {
-		return "Other"
-	}
-	return strings.ToUpper(cat[:1]) + cat[1:]
 }
 
 func formatItem(item shopping.Item) string {

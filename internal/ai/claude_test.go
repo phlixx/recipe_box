@@ -85,7 +85,7 @@ func TestParseRecipeFromResponse_ValidJSON(t *testing.T) {
 		"tags": ["quick", "easy"]
 	}`
 
-	r, err := parseRecipeFromResponse(jsonResponse)
+	r, err := parseRecipeFromResponse(jsonResponse, "en")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -105,6 +105,9 @@ func TestParseRecipeFromResponse_ValidJSON(t *testing.T) {
 	if r.Source != recipe.SourceAI {
 		t.Errorf("expected source 'ai', got '%s'", r.Source)
 	}
+	if r.Language != recipe.LangEN {
+		t.Errorf("expected language 'en', got '%s'", r.Language)
+	}
 }
 
 func TestParseRecipeFromResponse_MarkdownWrapped(t *testing.T) {
@@ -119,7 +122,7 @@ func TestParseRecipeFromResponse_MarkdownWrapped(t *testing.T) {
 		"tags": []
 	}` + "\n```"
 
-	r, err := parseRecipeFromResponse(jsonResponse)
+	r, err := parseRecipeFromResponse(jsonResponse, "en")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -130,8 +133,54 @@ func TestParseRecipeFromResponse_MarkdownWrapped(t *testing.T) {
 }
 
 func TestParseRecipeFromResponse_InvalidJSON(t *testing.T) {
-	_, err := parseRecipeFromResponse("not json at all")
+	_, err := parseRecipeFromResponse("not json at all", "en")
 	if err == nil {
 		t.Error("expected error for invalid JSON")
+	}
+}
+
+func TestParseRecipeFromResponse_GermanLanguage(t *testing.T) {
+	jsonResponse := `{
+		"title": "Test Rezept",
+		"description": "Ein Test",
+		"servings": 4,
+		"prep_time": 10,
+		"cook_time": 20,
+		"ingredients": [],
+		"steps": ["Schritt 1"],
+		"tags": []
+	}`
+
+	r, err := parseRecipeFromResponse(jsonResponse, "de")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if r.Language != recipe.LangDE {
+		t.Errorf("expected language 'de', got '%s'", r.Language)
+	}
+}
+
+func TestBuildPrompt_GermanLanguage(t *testing.T) {
+	opts := GenerateOptions{
+		Prompt:   "pasta dish",
+		Language: "de",
+	}
+	prompt := buildPrompt(opts)
+
+	if !strings.Contains(prompt, "German") {
+		t.Error("expected prompt to contain German language instruction")
+	}
+}
+
+func TestBuildPrompt_EnglishLanguage(t *testing.T) {
+	opts := GenerateOptions{
+		Prompt:   "pasta dish",
+		Language: "en",
+	}
+	prompt := buildPrompt(opts)
+
+	if !strings.Contains(prompt, "English") {
+		t.Error("expected prompt to contain English language instruction")
 	}
 }

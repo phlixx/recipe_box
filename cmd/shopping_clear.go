@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"recipe_box/internal/i18n"
 	"recipe_box/internal/shopping"
 	"recipe_box/internal/storage"
 
@@ -31,6 +32,6 @@ func runShoppingClear(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to clear shopping list: %w", err)
 	}
 
-	fmt.Println("Shopping list cleared.")
+	fmt.Println(i18n.T(i18n.MsgShoppingCleared))
 	return nil
 }

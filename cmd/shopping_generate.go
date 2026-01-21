@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"recipe_box/internal/i18n"
 	"recipe_box/internal/recipe"
 	"recipe_box/internal/shopping"
 	"recipe_box/internal/storage"
@@ -39,7 +40,7 @@ func runShoppingGenerate(cmd *cobra.Command, args []string) error {
 		r, err := recipeSvc.Get(id)
 		if err != nil {
 			if err == recipe.ErrNotFound {
-				fmt.Printf("Recipe %s not found, skipping\n", id)
+				fmt.Printf(i18n.T(i18n.MsgRecipeNotFound)+"\n", id)
 				continue
 			}
 			return fmt.Errorf("failed to get recipe %s: %w", id, err)
@@ -49,9 +50,9 @@ func runShoppingGenerate(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to add ingredients from %s: %w", id, err)
 		}
 
-		fmt.Printf("Added %d ingredients from '%s' to shopping list\n", len(r.Ingredients), r.Title)
+		fmt.Printf(i18n.T(i18n.MsgShoppingAdded)+"\n", len(r.Ingredients), r.Title)
 	}
 
-	fmt.Println("\nUse 'recipe_box shopping show' to view your shopping list.")
+	fmt.Printf("\n%s\n", i18n.T(i18n.MsgShoppingShowHint))
 	return nil
 }

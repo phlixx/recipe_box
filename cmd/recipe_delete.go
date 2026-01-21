@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"recipe_box/internal/i18n"
 	"recipe_box/internal/recipe"
 	"recipe_box/internal/storage"
 
@@ -36,7 +37,7 @@ func runRecipeDelete(cmd *cobra.Command, args []string) error {
 	r, err := svc.Get(id)
 	if err != nil {
 		if errors.Is(err, recipe.ErrNotFound) {
-			return fmt.Errorf("recipe %q not found", id)
+			return fmt.Errorf(i18n.T(i18n.MsgRecipeNotFound), id)
 		}
 		return fmt.Errorf("failed to get recipe: %w", err)
 	}
@@ -45,6 +46,6 @@ func runRecipeDelete(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to delete recipe: %w", err)
 	}
 
-	fmt.Printf("Deleted recipe '%s' (%s)\n", r.Title, r.ID)
+	fmt.Printf(i18n.T(i18n.MsgRecipeDeleted)+"\n", r.Title)
 	return nil
 }

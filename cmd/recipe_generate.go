@@ -6,6 +6,7 @@ import (
 
 	"recipe_box/internal/ai"
 	"recipe_box/internal/config"
+	"recipe_box/internal/i18n"
 	"recipe_box/internal/storage"
 
 	"github.com/spf13/cobra"
@@ -80,9 +81,10 @@ func runRecipeGenerate(cmd *cobra.Command, args []string) error {
 		Cuisine:     generateCuisine,
 		Vegetarian:  generateVegetarian,
 		Quick:       generateQuick,
+		Language:    i18n.GetLanguage(),
 	}
 
-	fmt.Println("Generating recipe...")
+	fmt.Println(i18n.T(i18n.MsgRecipeGenerating))
 
 	recipe, err := client.GenerateRecipe(opts)
 	if err != nil {
@@ -101,7 +103,7 @@ func runRecipeGenerate(cmd *cobra.Command, args []string) error {
 
 	fmt.Println()
 	printRecipe(recipe)
-	fmt.Println("\nUse 'recipe_box recipe save' to add this recipe to your collection.")
+	fmt.Printf("\n%s\n", i18n.T(i18n.MsgRecipeSaveHint))
 
 	return nil
 }

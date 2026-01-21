@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"recipe_box/internal/config"
+	"recipe_box/internal/i18n"
 
 	"github.com/spf13/cobra"
 )
@@ -28,7 +29,7 @@ var configGetCmd = &cobra.Command{
 		value, err := cfg.Get(args[0])
 		if err != nil {
 			if errors.Is(err, config.ErrKeyNotFound) {
-				return fmt.Errorf("key %q not found", args[0])
+				return fmt.Errorf(i18n.T(i18n.MsgConfigNotFound), args[0])
 			}
 			return err
 		}
@@ -52,7 +53,7 @@ var configSetCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Set %s = %s\n", args[0], args[1])
+		fmt.Printf(i18n.T(i18n.MsgConfigSet)+"\n", args[0], args[1])
 		return nil
 	},
 }
