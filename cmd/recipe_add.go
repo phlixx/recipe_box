@@ -12,6 +12,7 @@ import (
 	"recipe_box/internal/storage"
 	"recipe_box/internal/ui"
 
+	"github.com/c-bata/go-prompt"
 	"github.com/spf13/cobra"
 )
 
@@ -27,84 +28,116 @@ func init() {
 }
 
 func runRecipeAdd(cmd *cobra.Command, args []string) error {
-	reader := bufio.NewReader(os.Stdin)
-
 	header := i18n.T(i18n.MsgRecipeAddHeader)
 	ui.TitlePrintf("%s\n", header)
 	fmt.Println(strings.Repeat("=", len(header)))
 	fmt.Println()
 
-	// Title
-	title, err := readLine(reader, i18n.T(i18n.MsgPromptTitle))
-	if err != nil {
-		return err
+	var title, description, servingsStr, prepTimeStr, cookTimeStr, tagsStr string
+	var ingredients []recipe.Ingredient
+	var steps []string
+
+	if IsInteractive {
+		// Use go-prompt in REPL mode
+		emptyCompleter := func(d prompt.Document) []prompt.Suggest { return nil }
+
+		title = prompt.Input(i18n.T(i18n.MsgPromptTitle)+": ", emptyCompleter)
+		description = prompt.Input(i18n.T(i18n.MsgPromptDescription)+": ", emptyCompleter)
+		servingsStr = prompt.Input(i18n.T(i18n.MsgPromptServings)+": ", emptyCompleter)
+		prepTimeStr = prompt.Input(i18n.T(i18n.MsgPromptPrepTime)+": ", emptyCompleter)
+		cookTimeStr = prompt.Input(i18n.T(i18n.MsgPromptCookTime)+": ", emptyCompleter)
+
+		// Ingredients
+		fmt.Printf("\n%s:\n", i18n.T(i18n.MsgRecipeAddIngredients))
+		for {
+			line := prompt.Input("  "+i18n.T(i18n.MsgPromptIngredient)+": ", emptyCompleter)
+			if line == "" {
+				break
+			}
+			ingredients = append(ingredients, parseIngredient(line))
+		}
+
+		// Steps
+		fmt.Printf("\n%s:\n", i18n.T(i18n.MsgRecipeAddSteps))
+		stepNum := 1
+		for {
+			line := prompt.Input(fmt.Sprintf("  "+i18n.T(i18n.MsgPromptStep)+": ", stepNum), emptyCompleter)
+			if line == "" {
+				break
+			}
+			steps = append(steps, line)
+			stepNum++
+		}
+
+		tagsStr = prompt.Input(i18n.T(i18n.MsgPromptTags)+": ", emptyCompleter)
+	} else {
+		// Use bufio.Reader for CLI mode (supports piped input)
+		reader := bufio.NewReader(os.Stdin)
+		var err error
+
+		title, err = readLine(reader, i18n.T(i18n.MsgPromptTitle))
+		if err != nil {
+			return err
+		}
+		description, err = readLine(reader, i18n.T(i18n.MsgPromptDescription))
+		if err != nil {
+			return err
+		}
+		servingsStr, err = readLine(reader, i18n.T(i18n.MsgPromptServings))
+		if err != nil {
+			return err
+		}
+		prepTimeStr, err = readLine(reader, i18n.T(i18n.MsgPromptPrepTime))
+		if err != nil {
+			return err
+		}
+		cookTimeStr, err = readLine(reader, i18n.T(i18n.MsgPromptCookTime))
+		if err != nil {
+			return err
+		}
+
+		// Ingredients
+		fmt.Printf("\n%s:\n", i18n.T(i18n.MsgRecipeAddIngredients))
+		for {
+			line, err := readLine(reader, "  "+i18n.T(i18n.MsgPromptIngredient))
+			if err != nil {
+				return err
+			}
+			if line == "" {
+				break
+			}
+			ingredients = append(ingredients, parseIngredient(line))
+		}
+
+		// Steps
+		fmt.Printf("\n%s:\n", i18n.T(i18n.MsgRecipeAddSteps))
+		stepNum := 1
+		for {
+			line, err := readLine(reader, fmt.Sprintf("  "+i18n.T(i18n.MsgPromptStep), stepNum))
+			if err != nil {
+				return err
+			}
+			if line == "" {
+				break
+			}
+			steps = append(steps, line)
+			stepNum++
+		}
+
+		tagsStr, err = readLine(reader, i18n.T(i18n.MsgPromptTags))
+		if err != nil {
+			return err
+		}
 	}
 
-	// Description
-	description, err := readLine(reader, i18n.T(i18n.MsgPromptDescription))
-	if err != nil {
-		return err
-	}
-
-	// Servings
-	servingsStr, err := readLine(reader, i18n.T(i18n.MsgPromptServings))
-	if err != nil {
-		return err
-	}
+	// Parse values
 	servings, _ := strconv.Atoi(servingsStr)
 	if servings == 0 {
 		servings = 4
 	}
-
-	// Prep time
-	prepTimeStr, err := readLine(reader, i18n.T(i18n.MsgPromptPrepTime))
-	if err != nil {
-		return err
-	}
 	prepTime, _ := strconv.Atoi(prepTimeStr)
-
-	// Cook time
-	cookTimeStr, err := readLine(reader, i18n.T(i18n.MsgPromptCookTime))
-	if err != nil {
-		return err
-	}
 	cookTime, _ := strconv.Atoi(cookTimeStr)
 
-	// Ingredients
-	fmt.Printf("\n%s:\n", i18n.T(i18n.MsgRecipeAddIngredients))
-	var ingredients []recipe.Ingredient
-	for {
-		line, err := readLine(reader, "  "+i18n.T(i18n.MsgPromptIngredient))
-		if err != nil {
-			return err
-		}
-		if line == "" {
-			break
-		}
-		ingredients = append(ingredients, parseIngredient(line))
-	}
-
-	// Steps
-	fmt.Printf("\n%s:\n", i18n.T(i18n.MsgRecipeAddSteps))
-	var steps []string
-	stepNum := 1
-	for {
-		line, err := readLine(reader, fmt.Sprintf("  "+i18n.T(i18n.MsgPromptStep), stepNum))
-		if err != nil {
-			return err
-		}
-		if line == "" {
-			break
-		}
-		steps = append(steps, line)
-		stepNum++
-	}
-
-	// Tags
-	tagsStr, err := readLine(reader, i18n.T(i18n.MsgPromptTags))
-	if err != nil {
-		return err
-	}
 	var tags []string
 	if tagsStr != "" {
 		for _, tag := range strings.Split(tagsStr, ",") {

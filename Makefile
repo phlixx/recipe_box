@@ -1,4 +1,4 @@
-.PHONY: all build test vet fmt lint check clean run
+.PHONY: all build test test-e2e vet fmt lint check clean run
 
 # Default target
 all: check build
@@ -10,6 +10,10 @@ build:
 # Run all tests
 test:
 	go test -v ./...
+
+# Run only E2E tests
+test-e2e:
+	go test -v ./e2e/...
 
 # Run tests with coverage
 test-coverage:

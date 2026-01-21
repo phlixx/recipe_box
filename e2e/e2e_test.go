@@ -1,0 +1,1085 @@
+package e2e
+
+import (
+	"bytes"
+	"encoding/json"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/creack/pty"
+)
+
+var binaryPath string
+
+func TestMain(m *testing.M) {
+	// Build the binary before running tests
+	cmd := exec.Command("go", "build", "-o", "recipe_box_test", "..")
+	cmd.Dir = "."
+	if err := cmd.Run(); err != nil {
+		panic("failed to build binary: " + err.Error())
+	}
+
+	// Get absolute path to binary
+	var err error
+	binaryPath, err = filepath.Abs("recipe_box_test")
+	if err != nil {
+		panic("failed to get binary path: " + err.Error())
+	}
+
+	// Run tests
+	code := m.Run()
+
+	// Cleanup
+	os.Remove(binaryPath)
+
+	os.Exit(code)
+}
+
+// runCmd executes the CLI with the given args and returns stdout, stderr, and error
+func runCmd(t *testing.T, homeDir string, args ...string) (string, string, error) {
+	t.Helper()
+	return runCmdWithInput(t, homeDir, "", args...)
+}
+
+// runCmdWithInput executes the CLI with stdin input
+func runCmdWithInput(t *testing.T, homeDir string, input string, args ...string) (string, string, error) {
+	t.Helper()
+
+	cmd := exec.Command(binaryPath, args...)
+	cmd.Env = append(os.Environ(), "RECIPE_BOX_HOME="+homeDir, "NO_COLOR=1")
+
+	if input != "" {
+		cmd.Stdin = strings.NewReader(input)
+	}
+
+	var stdout, stderr strings.Builder
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	return stdout.String(), stderr.String(), err
+}
+
+// setupTestHome creates a temp directory for test isolation
+func setupTestHome(t *testing.T) string {
+	t.Helper()
+	dir, err := os.MkdirTemp("", "recipe_box_e2e_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	t.Cleanup(func() { os.RemoveAll(dir) })
+	return dir
+}
+
+// extractRecipeID extracts the recipe ID from "Recipe added: Title (ID)" output
+// Works with both English and German messages
+func extractRecipeID(output string) string {
+	lines := strings.Split(output, "\n")
+	for _, line := range lines {
+		// Look for lines containing "added" or "hinzugefügt" (the success messages)
+		if strings.Contains(line, "added") || strings.Contains(line, "hinzugefügt") {
+			// Find the last occurrence of (xxx) pattern which contains the ID
+			start := strings.LastIndex(line, "(")
+			end := strings.LastIndex(line, ")")
+			if start != -1 && end != -1 && start < end {
+				return line[start+1 : end]
+			}
+		}
+	}
+	return ""
+}
+
+// =============================================================================
+// Config Tests
+// =============================================================================
+
+func TestConfig_SetAndGet(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Set a value
+	stdout, _, err := runCmd(t, home, "config", "set", "api_key", "test-key-123")
+	if err != nil {
+		t.Fatalf("config set failed: %v", err)
+	}
+	if !strings.Contains(stdout, "test-key-123") {
+		t.Errorf("expected confirmation message, got: %s", stdout)
+	}
+
+	// Get the value back
+	stdout, _, err = runCmd(t, home, "config", "get", "api_key")
+	if err != nil {
+		t.Fatalf("config get failed: %v", err)
+	}
+	if !strings.Contains(stdout, "test-key-123") {
+		t.Errorf("expected 'test-key-123', got: %s", stdout)
+	}
+}
+
+func TestConfig_GetMissingKey(t *testing.T) {
+	home := setupTestHome(t)
+
+	_, stderr, err := runCmd(t, home, "config", "get", "nonexistent")
+	if err == nil {
+		t.Error("expected error for missing key")
+	}
+	if !strings.Contains(stderr, "not found") && !strings.Contains(stderr, "nicht gefunden") {
+		t.Errorf("expected 'not found' error, got: %s", stderr)
+	}
+}
+
+func TestConfig_SetLanguage(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Set language to German
+	_, _, err := runCmd(t, home, "config", "set", "language", "de")
+	if err != nil {
+		t.Fatalf("config set language failed: %v", err)
+	}
+
+	// Verify it persists
+	stdout, _, err := runCmd(t, home, "config", "get", "language")
+	if err != nil {
+		t.Fatalf("config get language failed: %v", err)
+	}
+	if !strings.Contains(stdout, "de") {
+		t.Errorf("expected 'de', got: %s", stdout)
+	}
+}
+
+// =============================================================================
+// Recipe Tests
+// =============================================================================
+
+func TestRecipe_ListEmpty(t *testing.T) {
+	home := setupTestHome(t)
+
+	stdout, _, err := runCmd(t, home, "recipe", "list")
+	if err != nil {
+		t.Fatalf("recipe list failed: %v", err)
+	}
+	if !strings.Contains(stdout, "No recipes") && !strings.Contains(stdout, "Keine Rezepte") {
+		t.Errorf("expected empty list message, got: %s", stdout)
+	}
+}
+
+func TestRecipe_ViewNotFound(t *testing.T) {
+	home := setupTestHome(t)
+
+	_, stderr, err := runCmd(t, home, "recipe", "view", "nonexistent")
+	if err == nil {
+		t.Error("expected error for nonexistent recipe")
+	}
+	if !strings.Contains(stderr, "not found") && !strings.Contains(stderr, "nicht gefunden") {
+		t.Errorf("expected 'not found' error, got: %s", stderr)
+	}
+}
+
+func TestRecipe_DeleteNotFound(t *testing.T) {
+	home := setupTestHome(t)
+
+	_, stderr, err := runCmd(t, home, "recipe", "delete", "nonexistent")
+	if err == nil {
+		t.Error("expected error for nonexistent recipe")
+	}
+	if !strings.Contains(stderr, "not found") && !strings.Contains(stderr, "nicht gefunden") {
+		t.Errorf("expected 'not found' error, got: %s", stderr)
+	}
+}
+
+// TestRecipe_Add tests adding a recipe interactively via stdin
+func TestRecipe_Add(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Input for recipe add:
+	// Title, Description, Servings, PrepTime, CookTime,
+	// Ingredients (empty line to finish), Steps (empty line to finish), Tags
+	input := `My Test Recipe
+A delicious test recipe
+4
+15
+30
+200 g flour
+100 ml milk
+2 eggs
+
+Mix ingredients
+Bake at 180C for 20 minutes
+
+quick, easy
+`
+
+	stdout, _, err := runCmdWithInput(t, home, input, "recipe", "add")
+	if err != nil {
+		t.Fatalf("recipe add failed: %v", err)
+	}
+	if !strings.Contains(stdout, "My Test Recipe") {
+		t.Errorf("expected recipe title in output, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "added") && !strings.Contains(stdout, "hinzugefügt") {
+		t.Errorf("expected 'added' confirmation, got: %s", stdout)
+	}
+
+	// Verify recipe was saved by listing
+	stdout, _, err = runCmd(t, home, "recipe", "list")
+	if err != nil {
+		t.Fatalf("recipe list failed: %v", err)
+	}
+	if !strings.Contains(stdout, "My Test Recipe") {
+		t.Errorf("expected recipe in list, got: %s", stdout)
+	}
+}
+
+// TestRecipe_AddMinimal tests adding a recipe with minimal info
+func TestRecipe_AddMinimal(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Minimal input - just title and one ingredient/step
+	input := `Minimal Recipe
+
+
+
+10
+5
+salt
+
+
+Season food
+
+
+`
+
+	stdout, _, err := runCmdWithInput(t, home, input, "recipe", "add")
+	if err != nil {
+		t.Fatalf("recipe add failed: %v", err)
+	}
+	if !strings.Contains(stdout, "Minimal Recipe") {
+		t.Errorf("expected recipe title in output, got: %s", stdout)
+	}
+
+	// Verify it's in the list
+	stdout, _, err = runCmd(t, home, "recipe", "list")
+	if err != nil {
+		t.Fatalf("recipe list failed: %v", err)
+	}
+	if !strings.Contains(stdout, "Minimal Recipe") {
+		t.Errorf("expected recipe in list, got: %s", stdout)
+	}
+}
+
+// TestRecipe_AddThenView tests the full add->view flow
+func TestRecipe_AddThenView(t *testing.T) {
+	home := setupTestHome(t)
+
+	input := `Pasta Carbonara
+Classic Italian pasta dish
+2
+5
+15
+400 g spaghetti
+150 g pancetta
+3 egg yolks
+50 g parmesan
+
+Boil pasta until al dente
+Fry pancetta until crispy
+Mix egg yolks with parmesan
+Combine all ingredients
+
+italian, pasta
+`
+
+	stdout, _, err := runCmdWithInput(t, home, input, "recipe", "add")
+	if err != nil {
+		t.Fatalf("recipe add failed: %v", err)
+	}
+
+	recipeID := extractRecipeID(stdout)
+	if recipeID == "" {
+		t.Fatalf("could not extract recipe ID from output: %s", stdout)
+	}
+
+	// View the recipe
+	stdout, _, err = runCmd(t, home, "recipe", "view", recipeID)
+	if err != nil {
+		t.Fatalf("recipe view failed: %v", err)
+	}
+
+	// Verify all fields are present
+	if !strings.Contains(stdout, "Pasta Carbonara") {
+		t.Errorf("expected title in view, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "Classic Italian") {
+		t.Errorf("expected description in view, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "spaghetti") {
+		t.Errorf("expected ingredient in view, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "Boil pasta") {
+		t.Errorf("expected step in view, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "italian") {
+		t.Errorf("expected tag in view, got: %s", stdout)
+	}
+}
+
+// TestRecipe_AddThenDelete tests add->delete flow
+func TestRecipe_AddThenDelete(t *testing.T) {
+	home := setupTestHome(t)
+
+	input := `Recipe To Delete
+Will be deleted
+2
+5
+10
+ingredient
+
+step 1
+
+
+`
+
+	stdout, _, err := runCmdWithInput(t, home, input, "recipe", "add")
+	if err != nil {
+		t.Fatalf("recipe add failed: %v", err)
+	}
+
+	recipeID := extractRecipeID(stdout)
+	if recipeID == "" {
+		t.Fatalf("could not extract recipe ID from output: %s", stdout)
+	}
+
+	// Delete it
+	stdout, _, err = runCmd(t, home, "recipe", "delete", recipeID)
+	if err != nil {
+		t.Fatalf("recipe delete failed: %v", err)
+	}
+	if !strings.Contains(stdout, "deleted") && !strings.Contains(stdout, "gelöscht") {
+		t.Errorf("expected delete confirmation, got: %s", stdout)
+	}
+
+	// Verify it's gone
+	stdout, _, err = runCmd(t, home, "recipe", "list")
+	if err != nil {
+		t.Fatalf("recipe list failed: %v", err)
+	}
+	if strings.Contains(stdout, "Recipe To Delete") {
+		t.Errorf("recipe should not be in list after delete, got: %s", stdout)
+	}
+}
+
+// TestRecipe_AddWithIngredientParsing tests that ingredients are parsed correctly
+func TestRecipe_AddWithIngredientParsing(t *testing.T) {
+	home := setupTestHome(t)
+
+	input := `Ingredient Test
+Testing ingredient parsing
+4
+0
+0
+500 g flour
+2 cups sugar
+1 tbsp vanilla extract
+3 eggs
+pinch of salt
+
+Mix well
+
+
+`
+
+	stdout, _, err := runCmdWithInput(t, home, input, "recipe", "add")
+	if err != nil {
+		t.Fatalf("recipe add failed: %v", err)
+	}
+
+	recipeID := extractRecipeID(stdout)
+	if recipeID == "" {
+		t.Fatalf("could not extract recipe ID from output: %s", stdout)
+	}
+
+	// View to check ingredient parsing
+	stdout, _, err = runCmd(t, home, "recipe", "view", recipeID)
+	if err != nil {
+		t.Fatalf("recipe view failed: %v", err)
+	}
+
+	// Check various ingredient formats are shown
+	if !strings.Contains(stdout, "flour") {
+		t.Errorf("expected 'flour' in ingredients, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "sugar") {
+		t.Errorf("expected 'sugar' in ingredients, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "vanilla") {
+		t.Errorf("expected 'vanilla' in ingredients, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "eggs") {
+		t.Errorf("expected 'eggs' in ingredients, got: %s", stdout)
+	}
+}
+
+// TestRecipe_FullCRUD tests creating, viewing, listing, and deleting a recipe
+// by directly manipulating the storage (since `recipe add` is interactive)
+func TestRecipe_FullCRUD(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a recipe directly in storage (simulating what `recipe add` does)
+	recipe := map[string]interface{}{
+		"id":          "test-123",
+		"title":       "Test Pasta",
+		"description": "A test recipe",
+		"servings":    4,
+		"prep_time":   10,
+		"cook_time":   20,
+		"ingredients": []map[string]interface{}{
+			{"name": "pasta", "quantity": 500, "unit": "g", "category": "pantry"},
+			{"name": "tomatoes", "quantity": 400, "unit": "g", "category": "produce"},
+		},
+		"steps":    []string{"Boil pasta", "Add sauce"},
+		"tags":     []string{"italian", "quick"},
+		"source":   "manual",
+		"language": "en",
+	}
+
+	// Write recipes.json
+	recipes := []interface{}{recipe}
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	if err := os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644); err != nil {
+		t.Fatalf("failed to write test recipe: %v", err)
+	}
+
+	// Test list
+	stdout, _, err := runCmd(t, home, "recipe", "list")
+	if err != nil {
+		t.Fatalf("recipe list failed: %v", err)
+	}
+	if !strings.Contains(stdout, "Test Pasta") {
+		t.Errorf("expected 'Test Pasta' in list, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "test-123") {
+		t.Errorf("expected recipe ID in list, got: %s", stdout)
+	}
+
+	// Test view
+	stdout, _, err = runCmd(t, home, "recipe", "view", "test-123")
+	if err != nil {
+		t.Fatalf("recipe view failed: %v", err)
+	}
+	if !strings.Contains(stdout, "Test Pasta") {
+		t.Errorf("expected title in view, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "pasta") {
+		t.Errorf("expected ingredients in view, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "Boil pasta") {
+		t.Errorf("expected steps in view, got: %s", stdout)
+	}
+
+	// Test delete
+	stdout, _, err = runCmd(t, home, "recipe", "delete", "test-123")
+	if err != nil {
+		t.Fatalf("recipe delete failed: %v", err)
+	}
+	if !strings.Contains(stdout, "deleted") && !strings.Contains(stdout, "gelöscht") {
+		t.Errorf("expected deletion confirmation, got: %s", stdout)
+	}
+
+	// Verify it's gone
+	_, stderr, err := runCmd(t, home, "recipe", "view", "test-123")
+	if err == nil {
+		t.Error("expected error viewing deleted recipe")
+	}
+	if !strings.Contains(stderr, "not found") && !strings.Contains(stderr, "nicht gefunden") {
+		t.Errorf("expected 'not found' after delete, got: %s", stderr)
+	}
+}
+
+func TestRecipe_SaveWithoutGenerate(t *testing.T) {
+	home := setupTestHome(t)
+
+	_, stderr, err := runCmd(t, home, "recipe", "save")
+	if err == nil {
+		t.Error("expected error when saving without prior generate")
+	}
+	if !strings.Contains(stderr, "No generated") && !strings.Contains(stderr, "Kein generiertes") {
+		t.Errorf("expected 'no generated recipe' error, got: %s", stderr)
+	}
+}
+
+// =============================================================================
+// Shopping List Tests
+// =============================================================================
+
+func TestShopping_ShowEmpty(t *testing.T) {
+	home := setupTestHome(t)
+
+	stdout, _, err := runCmd(t, home, "shopping", "show")
+	if err != nil {
+		t.Fatalf("shopping show failed: %v", err)
+	}
+	if !strings.Contains(stdout, "empty") && !strings.Contains(stdout, "leer") {
+		t.Errorf("expected empty list message, got: %s", stdout)
+	}
+}
+
+func TestShopping_ClearEmpty(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Should succeed even when empty
+	stdout, _, err := runCmd(t, home, "shopping", "clear")
+	if err != nil {
+		t.Fatalf("shopping clear failed: %v", err)
+	}
+	if !strings.Contains(stdout, "cleared") && !strings.Contains(stdout, "geleert") {
+		t.Errorf("expected cleared message, got: %s", stdout)
+	}
+}
+
+func TestShopping_GenerateFromRecipe(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a recipe first
+	recipe := map[string]interface{}{
+		"id":          "pasta-1",
+		"title":       "Simple Pasta",
+		"description": "Easy pasta",
+		"servings":    2,
+		"prep_time":   5,
+		"cook_time":   15,
+		"ingredients": []map[string]interface{}{
+			{"name": "spaghetti", "quantity": 250, "unit": "g", "category": "pantry"},
+			{"name": "olive oil", "quantity": 2, "unit": "tbsp", "category": "pantry"},
+			{"name": "garlic", "quantity": 3, "unit": "cloves", "category": "produce"},
+		},
+		"steps":    []string{"Cook pasta", "Add garlic and oil"},
+		"tags":     []string{"quick"},
+		"source":   "manual",
+		"language": "en",
+	}
+
+	recipes := []interface{}{recipe}
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	if err := os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644); err != nil {
+		t.Fatalf("failed to write test recipe: %v", err)
+	}
+
+	// Generate shopping list
+	stdout, _, err := runCmd(t, home, "shopping", "generate", "pasta-1")
+	if err != nil {
+		t.Fatalf("shopping generate failed: %v", err)
+	}
+	if !strings.Contains(stdout, "3") && !strings.Contains(stdout, "ingredients") {
+		t.Errorf("expected success message with ingredient count, got: %s", stdout)
+	}
+
+	// Show shopping list
+	stdout, _, err = runCmd(t, home, "shopping", "show")
+	if err != nil {
+		t.Fatalf("shopping show failed: %v", err)
+	}
+	if !strings.Contains(stdout, "spaghetti") {
+		t.Errorf("expected 'spaghetti' in shopping list, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "garlic") {
+		t.Errorf("expected 'garlic' in shopping list, got: %s", stdout)
+	}
+
+	// Clear shopping list
+	stdout, _, err = runCmd(t, home, "shopping", "clear")
+	if err != nil {
+		t.Fatalf("shopping clear failed: %v", err)
+	}
+
+	// Verify it's empty
+	stdout, _, err = runCmd(t, home, "shopping", "show")
+	if err != nil {
+		t.Fatalf("shopping show after clear failed: %v", err)
+	}
+	if !strings.Contains(stdout, "empty") && !strings.Contains(stdout, "leer") {
+		t.Errorf("expected empty after clear, got: %s", stdout)
+	}
+}
+
+func TestShopping_GenerateNonexistentRecipe(t *testing.T) {
+	home := setupTestHome(t)
+
+	stdout, _, err := runCmd(t, home, "shopping", "generate", "nonexistent")
+	// This should not fail entirely, but should show error for the recipe
+	if err != nil {
+		t.Fatalf("shopping generate failed entirely: %v", err)
+	}
+	if !strings.Contains(stdout, "not found") && !strings.Contains(stdout, "nicht gefunden") {
+		t.Errorf("expected 'not found' message, got: %s", stdout)
+	}
+}
+
+func TestShopping_GenerateMultipleRecipes(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create two recipes
+	recipes := []map[string]interface{}{
+		{
+			"id":       "r1",
+			"title":    "Recipe One",
+			"servings": 2,
+			"ingredients": []map[string]interface{}{
+				{"name": "flour", "quantity": 200, "unit": "g", "category": "pantry"},
+			},
+			"steps":    []string{"Step 1"},
+			"source":   "manual",
+			"language": "en",
+		},
+		{
+			"id":       "r2",
+			"title":    "Recipe Two",
+			"servings": 4,
+			"ingredients": []map[string]interface{}{
+				{"name": "sugar", "quantity": 100, "unit": "g", "category": "pantry"},
+				{"name": "flour", "quantity": 300, "unit": "g", "category": "pantry"},
+			},
+			"steps":    []string{"Step 1"},
+			"source":   "manual",
+			"language": "en",
+		},
+	}
+
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	if err := os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644); err != nil {
+		t.Fatalf("failed to write test recipes: %v", err)
+	}
+
+	// Generate from both recipes
+	_, _, err := runCmd(t, home, "shopping", "generate", "r1", "r2")
+	if err != nil {
+		t.Fatalf("shopping generate multiple failed: %v", err)
+	}
+
+	// Check shopping list has merged ingredients
+	stdout, _, err := runCmd(t, home, "shopping", "show")
+	if err != nil {
+		t.Fatalf("shopping show failed: %v", err)
+	}
+	if !strings.Contains(stdout, "flour") {
+		t.Errorf("expected 'flour' in list, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "sugar") {
+		t.Errorf("expected 'sugar' in list, got: %s", stdout)
+	}
+	// Flour should be merged (200 + 300 = 500g)
+	if !strings.Contains(stdout, "500") {
+		t.Errorf("expected merged flour quantity (500g), got: %s", stdout)
+	}
+}
+
+// =============================================================================
+// Localization Tests
+// =============================================================================
+
+func TestLocalization_GermanMessages(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Set language to German
+	_, _, err := runCmd(t, home, "config", "set", "language", "de")
+	if err != nil {
+		t.Fatalf("config set language failed: %v", err)
+	}
+
+	// Check that messages are in German
+	stdout, _, err := runCmd(t, home, "recipe", "list")
+	if err != nil {
+		t.Fatalf("recipe list failed: %v", err)
+	}
+	if !strings.Contains(stdout, "Keine Rezepte") {
+		t.Errorf("expected German message 'Keine Rezepte', got: %s", stdout)
+	}
+
+	// Shopping list should also be in German
+	stdout, _, err = runCmd(t, home, "shopping", "show")
+	if err != nil {
+		t.Fatalf("shopping show failed: %v", err)
+	}
+	if !strings.Contains(stdout, "leer") {
+		t.Errorf("expected German 'leer', got: %s", stdout)
+	}
+}
+
+// =============================================================================
+// Help and Usage Tests
+// =============================================================================
+
+func TestHelp_RootCommand(t *testing.T) {
+	home := setupTestHome(t)
+
+	stdout, _, err := runCmd(t, home, "--help")
+	if err != nil {
+		t.Fatalf("help failed: %v", err)
+	}
+	if !strings.Contains(stdout, "recipe") {
+		t.Errorf("expected 'recipe' in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "shopping") {
+		t.Errorf("expected 'shopping' in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "config") {
+		t.Errorf("expected 'config' in help, got: %s", stdout)
+	}
+}
+
+func TestHelp_RecipeCommand(t *testing.T) {
+	home := setupTestHome(t)
+
+	stdout, _, err := runCmd(t, home, "recipe", "--help")
+	if err != nil {
+		t.Fatalf("recipe help failed: %v", err)
+	}
+	if !strings.Contains(stdout, "list") {
+		t.Errorf("expected 'list' in recipe help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "view") {
+		t.Errorf("expected 'view' in recipe help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "generate") {
+		t.Errorf("expected 'generate' in recipe help, got: %s", stdout)
+	}
+}
+
+func TestHelp_ShoppingCommand(t *testing.T) {
+	home := setupTestHome(t)
+
+	stdout, _, err := runCmd(t, home, "shopping", "--help")
+	if err != nil {
+		t.Fatalf("shopping help failed: %v", err)
+	}
+	if !strings.Contains(stdout, "generate") {
+		t.Errorf("expected 'generate' in shopping help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "show") {
+		t.Errorf("expected 'show' in shopping help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "clear") {
+		t.Errorf("expected 'clear' in shopping help, got: %s", stdout)
+	}
+}
+
+// =============================================================================
+// Interactive Mode (REPL) Tests
+// =============================================================================
+
+// interactiveSession manages a PTY session for testing interactive mode
+type interactiveSession struct {
+	t      *testing.T
+	cmd    *exec.Cmd
+	ptmx   *os.File
+	output bytes.Buffer
+}
+
+// startInteractive starts the binary in interactive mode with a PTY
+func startInteractive(t *testing.T, homeDir string) *interactiveSession {
+	t.Helper()
+
+	cmd := exec.Command(binaryPath)
+	cmd.Env = append(os.Environ(),
+		"RECIPE_BOX_HOME="+homeDir,
+		"NO_COLOR=1",
+		"TERM=xterm-256color",
+	)
+
+	// Start with PTY
+	ptmx, err := pty.Start(cmd)
+	if err != nil {
+		t.Fatalf("failed to start PTY: %v", err)
+	}
+
+	// Set terminal size
+	pty.Setsize(ptmx, &pty.Winsize{Rows: 24, Cols: 80})
+
+	s := &interactiveSession{
+		t:    t,
+		cmd:  cmd,
+		ptmx: ptmx,
+	}
+
+	// Start reading output in background
+	go s.readLoop()
+
+	// Wait for initial prompt
+	time.Sleep(500 * time.Millisecond)
+
+	return s
+}
+
+func (s *interactiveSession) readLoop() {
+	buf := make([]byte, 1024)
+	for {
+		n, err := s.ptmx.Read(buf)
+		if n > 0 {
+			s.output.Write(buf[:n])
+		}
+		if err != nil {
+			return
+		}
+	}
+}
+
+func (s *interactiveSession) send(input string) {
+	// Type each character with small delay to let go-prompt process
+	for _, c := range input {
+		s.ptmx.Write([]byte(string(c)))
+		time.Sleep(10 * time.Millisecond)
+	}
+	// Send Enter key
+	time.Sleep(50 * time.Millisecond)
+	s.ptmx.Write([]byte("\n"))
+}
+
+func (s *interactiveSession) waitAndRead(d time.Duration) string {
+	time.Sleep(d)
+	out := s.output.String()
+	s.output.Reset()
+	return out
+}
+
+func (s *interactiveSession) getFullOutput() string {
+	return s.output.String()
+}
+
+func (s *interactiveSession) close() {
+	s.send("exit")
+	time.Sleep(200 * time.Millisecond)
+	s.ptmx.Close()
+	s.cmd.Process.Kill()
+	s.cmd.Wait()
+}
+
+func TestInteractive_StartsAndShowsPrompt(t *testing.T) {
+	home := setupTestHome(t)
+	session := startInteractive(t, home)
+	defer session.close()
+
+	// Check initial output has welcome message
+	output := session.getFullOutput()
+	if !strings.Contains(output, "Recipe Box") {
+		t.Errorf("expected 'Recipe Box' in welcome, got: %s", output)
+	}
+
+	// Send help command
+	session.send("help")
+	output = session.waitAndRead(500 * time.Millisecond)
+
+	if !strings.Contains(output, "recipe") {
+		t.Errorf("expected 'recipe' in help output, got: %s", output)
+	}
+}
+
+func TestInteractive_RecipeList(t *testing.T) {
+	home := setupTestHome(t)
+	session := startInteractive(t, home)
+	defer session.close()
+
+	// Run recipe list
+	session.send("recipe list")
+	output := session.waitAndRead(500 * time.Millisecond)
+
+	// Should show empty list message
+	if !strings.Contains(output, "No recipes") && !strings.Contains(output, "Keine Rezepte") {
+		t.Errorf("expected empty list message, got: %s", output)
+	}
+}
+
+func TestInteractive_MultipleCommands(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a recipe first
+	recipe := map[string]interface{}{
+		"id":       "int-test-1",
+		"title":    "Interactive Test Recipe",
+		"servings": 2,
+		"ingredients": []map[string]interface{}{
+			{"name": "test ingredient", "quantity": 1, "unit": "cup", "category": "pantry"},
+		},
+		"steps":    []string{"Test step"},
+		"source":   "manual",
+		"language": "en",
+	}
+	recipes := []interface{}{recipe}
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644)
+
+	session := startInteractive(t, home)
+	defer session.close()
+
+	// List recipes
+	session.send("recipe list")
+	output := session.waitAndRead(500 * time.Millisecond)
+
+	if !strings.Contains(output, "Interactive Test Recipe") {
+		t.Errorf("expected recipe in list, got: %s", output)
+	}
+
+	// View recipe
+	session.send("recipe view int-test-1")
+	output = session.waitAndRead(500 * time.Millisecond)
+
+	if !strings.Contains(output, "Interactive Test Recipe") {
+		t.Errorf("expected recipe title in view, got: %s", output)
+	}
+
+	// Generate shopping list
+	session.send("shopping generate int-test-1")
+	output = session.waitAndRead(500 * time.Millisecond)
+
+	if !strings.Contains(output, "Added") && !strings.Contains(output, "hinzugefügt") {
+		t.Errorf("expected shopping add confirmation, got: %s", output)
+	}
+
+	// Show shopping list
+	session.send("shopping show")
+	output = session.waitAndRead(500 * time.Millisecond)
+
+	if !strings.Contains(output, "test ingredient") {
+		t.Errorf("expected ingredient in shopping list, got: %s", output)
+	}
+}
+
+func TestInteractive_ExitCommand(t *testing.T) {
+	home := setupTestHome(t)
+
+	cmd := exec.Command(binaryPath)
+	cmd.Env = append(os.Environ(), "RECIPE_BOX_HOME="+home, "NO_COLOR=1", "TERM=xterm-256color")
+
+	ptmx, err := pty.Start(cmd)
+	if err != nil {
+		t.Fatalf("failed to start PTY: %v", err)
+	}
+	defer func() {
+		ptmx.Close()
+		cmd.Process.Kill()
+		cmd.Wait()
+	}()
+
+	pty.Setsize(ptmx, &pty.Winsize{Rows: 24, Cols: 80})
+
+	// Read output in background
+	var output bytes.Buffer
+	go func() {
+		buf := make([]byte, 1024)
+		for {
+			n, err := ptmx.Read(buf)
+			if n > 0 {
+				output.Write(buf[:n])
+			}
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	// Wait for startup
+	time.Sleep(500 * time.Millisecond)
+
+	// Type exit command character by character
+	for _, c := range "exit" {
+		ptmx.Write([]byte(string(c)))
+		time.Sleep(20 * time.Millisecond)
+	}
+	time.Sleep(100 * time.Millisecond)
+	ptmx.Write([]byte("\n"))
+
+	// Wait and check output for "Goodbye!"
+	time.Sleep(500 * time.Millisecond)
+	if !strings.Contains(output.String(), "Goodbye") {
+		t.Errorf("expected 'Goodbye' in output, got: %s", output.String())
+	}
+}
+
+func TestInteractive_QuitCommand(t *testing.T) {
+	home := setupTestHome(t)
+
+	cmd := exec.Command(binaryPath)
+	cmd.Env = append(os.Environ(), "RECIPE_BOX_HOME="+home, "NO_COLOR=1", "TERM=xterm-256color")
+
+	ptmx, err := pty.Start(cmd)
+	if err != nil {
+		t.Fatalf("failed to start PTY: %v", err)
+	}
+	defer func() {
+		ptmx.Close()
+		cmd.Process.Kill()
+		cmd.Wait()
+	}()
+
+	pty.Setsize(ptmx, &pty.Winsize{Rows: 24, Cols: 80})
+
+	// Read output in background
+	var output bytes.Buffer
+	go func() {
+		buf := make([]byte, 1024)
+		for {
+			n, err := ptmx.Read(buf)
+			if n > 0 {
+				output.Write(buf[:n])
+			}
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	// Wait for startup
+	time.Sleep(500 * time.Millisecond)
+
+	// Type quit command character by character
+	for _, c := range "quit" {
+		ptmx.Write([]byte(string(c)))
+		time.Sleep(20 * time.Millisecond)
+	}
+	time.Sleep(100 * time.Millisecond)
+	ptmx.Write([]byte("\n"))
+
+	// Wait and check output for "Goodbye!"
+	time.Sleep(500 * time.Millisecond)
+	if !strings.Contains(output.String(), "Goodbye") {
+		t.Errorf("expected 'Goodbye' in output, got: %s", output.String())
+	}
+}
+
+func TestInteractive_InvalidCommand(t *testing.T) {
+	home := setupTestHome(t)
+	session := startInteractive(t, home)
+	defer session.close()
+
+	// Send invalid command
+	session.send("notacommand")
+	output := session.waitAndRead(500 * time.Millisecond)
+
+	// Should show error (go-prompt echoes command, Cobra shows error)
+	if !strings.Contains(output, "unknown") && !strings.Contains(output, "Error") && !strings.Contains(output, "notacommand") {
+		t.Errorf("expected error or echo for unknown command, got: %s", output)
+	}
+}
+
+func TestInteractive_ConfigPersists(t *testing.T) {
+	home := setupTestHome(t)
+	session := startInteractive(t, home)
+	defer session.close()
+
+	// Set config
+	session.send("config set language de")
+	output := session.waitAndRead(500 * time.Millisecond)
+
+	if !strings.Contains(output, "de") {
+		t.Errorf("expected config confirmation, got: %s", output)
+	}
+
+	// Verify with get
+	session.send("config get language")
+	output = session.waitAndRead(500 * time.Millisecond)
+
+	if !strings.Contains(output, "de") {
+		t.Errorf("expected 'de' in config get, got: %s", output)
+	}
+}

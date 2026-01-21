@@ -20,12 +20,7 @@ type Config struct {
 }
 
 func New() (*Config, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-
-	configDir := filepath.Join(homeDir, dirName)
+	configDir := getBaseDir()
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		return nil, err
 	}
@@ -41,6 +36,18 @@ func New() (*Config, error) {
 	}
 
 	return c, nil
+}
+
+// getBaseDir returns the config directory, checking RECIPE_BOX_HOME env var first
+func getBaseDir() string {
+	if envDir := os.Getenv("RECIPE_BOX_HOME"); envDir != "" {
+		return envDir
+	}
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return ".recipe_box"
+	}
+	return filepath.Join(homeDir, dirName)
 }
 
 func (c *Config) Get(key string) (string, error) {

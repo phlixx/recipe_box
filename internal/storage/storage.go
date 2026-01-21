@@ -13,17 +13,24 @@ type Storage struct {
 }
 
 func New() (*Storage, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-
-	baseDir := filepath.Join(homeDir, dirName)
+	baseDir := getBaseDir()
 	if err := os.MkdirAll(baseDir, 0755); err != nil {
 		return nil, err
 	}
 
 	return &Storage{baseDir: baseDir}, nil
+}
+
+// getBaseDir returns the storage directory, checking RECIPE_BOX_HOME env var first
+func getBaseDir() string {
+	if envDir := os.Getenv("RECIPE_BOX_HOME"); envDir != "" {
+		return envDir
+	}
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return ".recipe_box"
+	}
+	return filepath.Join(homeDir, dirName)
 }
 
 func (s *Storage) Save(filename string, data any) error {
