@@ -23,12 +23,25 @@ A Go CLI for generating recipes and shopping lists.
 
 | File | Purpose | Updates |
 |------|---------|---------|
-| `PRODUCT.md` | Use cases, data model, MVP scope | When requirements change |
-| `ITERATIONS.md` | Iteration plan with deliverables | When scope changes |
+| `PRODUCT.md` | Use cases, data model, scope | When scope/requirements change |
+| `ITERATIONS.md` | Iteration plan with deliverables | When roadmap changes |
 | `STATUS.md` | Current focus, blockers, handoff notes | Every session |
 | `TODO.md` | Pending tasks only (no completed section) | When tasks change |
 | `DECISIONS.md` | Architecture decisions (append-only) | When decisions made |
 | `git log` | Completed work (source of truth) | Automatic |
+
+### Session Types
+
+| Type | Focus | Key Updates |
+|------|-------|-------------|
+| **Implement** | Write code, fix bugs, add features | STATUS, TODO, README |
+| **Steer** | Plan phases, design decisions, adjust scope | STATUS, PRODUCT, DECISIONS, ITERATIONS |
+
+Most sessions are **Implement**. Use **Steer** when:
+- Planning a new phase or major feature
+- Making architecture/design decisions
+- Changing project scope or requirements
+- Reviewing or adjusting the roadmap
 
 ### Starting a Session
 
@@ -37,20 +50,27 @@ A Go CLI for generating recipes and shopping lists.
 2. Read: STATUS.md
 3. Read: TODO.md
 4. Validate: Do the files align with git history? Flag if not.
+5. Identify: Is this an Implement or Steer session?
 ```
 
 **Validation check**: If STATUS.md mentions work that doesn't appear in recent commits, or TODO.md lists tasks as pending that were already done, fix the inconsistency before proceeding.
 
 ### Ending a Session
 
-Update **STATUS.md** with:
+**Both session types** — Update STATUS.md:
 - Current focus (what's being worked on)
 - Blockers (if any)
 - Handoff notes (context for next session)
 
-Update **TODO.md**:
-- Remove completed tasks (don't mark done, just delete)
-- Add new tasks discovered
+**Implement sessions** — Also update:
+- TODO.md (remove completed, add new)
+- README.md (if user-facing features changed)
+
+**Steer sessions** — Also update:
+- PRODUCT.md (if scope or requirements changed)
+- DECISIONS.md (append ADR if design decisions made)
+- ITERATIONS.md (if roadmap changed)
+- TODO.md (if planning surfaced concrete tasks)
 
 **Do NOT duplicate git history in state files.**
 
@@ -164,12 +184,19 @@ recipe_box/
 
 Before considering any task complete:
 
+**Implement sessions:**
 - [ ] `make check` passes (fmt, vet, test)
 - [ ] `make build` succeeds
 - [ ] Smoke test if CLI behavior changed
 - [ ] STATUS.md updated
 - [ ] Completed tasks removed from TODO.md
 - [ ] README.md updated if user-facing features changed
+
+**Steer sessions:**
+- [ ] PRODUCT.md updated if scope changed
+- [ ] DECISIONS.md has ADR for each design decision
+- [ ] ITERATIONS.md reflects current roadmap
+- [ ] STATUS.md updated with handoff notes
 
 > **If `make check` doesn't pass, the work isn't done.**
 
