@@ -1,22 +1,90 @@
-# Recipe Box CLI
+<p align="center">
+  <h1 align="center">Recipe Box</h1>
+  <p align="center">
+    <strong>Your AI-powered kitchen companion in the terminal</strong>
+  </p>
+  <p align="center">
+    Generate recipes, scale servings, build shopping lists — all from the command line.
+  </p>
+</p>
 
-A command-line tool for managing recipes and shopping lists, powered by Claude AI.
+<p align="center">
+  <a href="#installation">Installation</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#features">Features</a> •
+  <a href="#usage">Usage</a> •
+  <a href="#localization">Deutsch/English</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/go-%3E%3D1.21-blue" alt="Go Version">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
+  <img src="https://img.shields.io/badge/powered%20by-Claude%20AI-orange" alt="Powered by Claude">
+</p>
+
+---
+
+```
+$ recipe_box
+Recipe Box - Interactive Mode
+Type 'help' for commands, 'exit' to quit
+
+🍳 > recipe generate --cuisine italian --quick
+
+    🍝 Pasta Aglio e Olio
+    ═══════════════════════════════════════
+
+    A classic Roman pasta dish - simple, fast, and delicious.
+    Ready in 20 minutes. Serves 4.
+
+    Ingredients:
+      - 400g spaghetti
+      - 6 cloves garlic, thinly sliced
+      - 1/2 cup extra virgin olive oil
+      - 1 tsp red pepper flakes
+      - Fresh parsley, chopped
+      ...
+
+🍳 > recipe save
+✓ Recipe saved: a3f8c2d1
+
+🍳 > shopping generate a3f8c2d1
+✓ Added 5 items to shopping list
+```
+
+---
+
+## Why Recipe Box?
+
+**Tired of browser tabs full of recipe sites?** Recipe Box keeps your recipes in one place, generates new ones on demand, and builds shopping lists automatically.
+
+| What you get | How it works |
+|--------------|--------------|
+| **AI-generated recipes** | Describe what you want, get a complete recipe |
+| **Smart shopping lists** | One command turns recipes into categorized lists |
+| **Flexible scaling** | Cooking for 2 or 20? Scale any recipe instantly |
+| **Works offline** | Your saved recipes are always available locally |
+| **Terminal-native** | Fast, scriptable, no GUI needed |
+
+---
 
 ## Features
 
-- **AI-Powered Recipe Generation** - Generate recipes using Claude AI with customizable criteria (cuisine, ingredients, dietary restrictions)
-- **Recipe Management** - Add, list, view, and delete recipes from your personal collection
-- **Shopping Lists** - Generate shopping lists from recipes with automatic ingredient categorization
-- **Servings Scaling** - Scale recipes up or down, with automatic quantity adjustments
-- **Localization** - Full support for English and German (DE/EN)
-- **Interactive Mode** - REPL interface with tab completion and colored output
+- **AI Recipe Generation** — Generate recipes by cuisine, ingredients, dietary needs, or freeform prompts
+- **Recipe Collection** — Save, organize, and manage your personal recipe library
+- **Shopping Lists** — Auto-generate shopping lists grouped by category (produce, dairy, etc.)
+- **Servings Scaling** — Scale any recipe up or down with automatic quantity adjustments
+- **Interactive Mode** — REPL with tab completion, history, and colored output
+- **Bilingual** — Full English and German support (UI, recipes, units)
+
+---
 
 ## Installation
 
 ### Prerequisites
 
-- Go 1.21 or later
-- Claude API key (get one at [console.anthropic.com](https://console.anthropic.com))
+- Go 1.21+
+- Claude API key → [console.anthropic.com](https://console.anthropic.com)
 
 ### Build from Source
 
@@ -26,173 +94,158 @@ cd recipe_box
 make build
 ```
 
-The binary will be at `./bin/recipe_box`.
+Binary: `./bin/recipe_box`
+
+---
 
 ## Quick Start
 
-1. **Set your API key:**
-   ```bash
-   recipe_box config set api_key YOUR_API_KEY
-   ```
+```bash
+# 1. Configure your API key
+recipe_box config set api_key YOUR_API_KEY
 
-2. **Set your language (optional, defaults to English):**
-   ```bash
-   recipe_box config set language de  # or "en"
-   ```
+# 2. Generate your first recipe
+recipe_box recipe generate --prompt "quick healthy lunch"
 
-3. **Generate a recipe:**
-   ```bash
-   recipe_box recipe generate --prompt "quick pasta dish"
-   ```
+# 3. Save it to your collection
+recipe_box recipe save
 
-4. **Save the generated recipe:**
-   ```bash
-   recipe_box recipe save
-   ```
+# 4. Create a shopping list
+recipe_box shopping generate <recipe-id>
+recipe_box shopping show
+```
 
-5. **Create a shopping list:**
-   ```bash
-   recipe_box shopping generate <recipe-id>
-   recipe_box shopping show
-   ```
+Or just run `recipe_box` to enter interactive mode with tab completion.
+
+---
 
 ## Usage
 
 ### Interactive Mode
 
-Run `recipe_box` without arguments to enter interactive mode:
+Launch without arguments for the full experience:
 
 ```
 $ recipe_box
-Recipe Box - Interactive Mode
-Type 'help' for commands, 'exit' to quit
 
-🍳 > recipe list
-🍳 > recipe generate --cuisine italian
-🍳 > exit
+🍳 > help
+Available commands:
+  recipe      Manage recipes
+  shopping    Manage shopping list
+  config      Settings
+  help        Show this help
+  exit        Quit
+
+🍳 > recipe gen<TAB>     # Tab completion
+🍳 > recipe view a3f<TAB> # Completes recipe IDs too
 ```
-
-Features in interactive mode:
-- Tab completion for commands and recipe IDs
-- Command history (arrow keys)
-- Colored output
 
 ### Recipe Commands
 
 ```bash
-# Generate a recipe with AI
-recipe_box recipe generate --prompt "quick weeknight dinner"
-recipe_box recipe generate --ingredients "chicken, lemon, garlic"
-recipe_box recipe generate --cuisine italian --vegetarian
+# Generate with various options
+recipe_box recipe generate --prompt "comfort food for winter"
+recipe_box recipe generate --ingredients "salmon, asparagus, lemon"
+recipe_box recipe generate --cuisine mexican --vegetarian
 recipe_box recipe generate --quick --servings 6
 
-# Save the last generated recipe
-recipe_box recipe save
-
-# Manually add a recipe
-recipe_box recipe add
-
-# List all recipes
+# Manage your collection
 recipe_box recipe list
-
-# View a recipe (with optional scaling)
 recipe_box recipe view <id>
-recipe_box recipe view <id> --servings 8
-
-# Delete a recipe
+recipe_box recipe view <id> --servings 4  # Scale it
 recipe_box recipe delete <id>
+recipe_box recipe save                     # Save last generated
+recipe_box recipe add                      # Add manually
 ```
 
-### Shopping List Commands
+### Shopping Lists
 
 ```bash
-# Add ingredients from a recipe to shopping list
-recipe_box shopping generate <recipe-id>
-recipe_box shopping generate <recipe-id> --servings 4
+# Generate from one or more recipes
+recipe_box shopping generate <id>
+recipe_box shopping generate <id1> <id2> --servings 4
 
-# Add from multiple recipes
-recipe_box shopping generate <id1> <id2> <id3>
-
-# View shopping list (grouped by category)
-recipe_box shopping show
-
-# Clear shopping list
+# View and manage
+recipe_box shopping show    # Grouped by category
 recipe_box shopping clear
 ```
 
 ### Configuration
 
 ```bash
-# Set API key
 recipe_box config set api_key YOUR_KEY
-
-# Set language (en or de)
-recipe_box config set language de
-
-# Get a config value
+recipe_box config set language de    # Switch to German
 recipe_box config get language
 ```
 
+---
+
 ## Localization
 
-Recipe Box supports English and German. When set to German:
-
-- CLI messages and help text appear in German
-- AI generates recipes in German
-- Shopping list categories are in German
-- Cooking units are translated (tbsp → EL, cups → Tassen, tsp → TL)
+Recipe Box speaks English and German. Set your language:
 
 ```bash
 recipe_box config set language de
 ```
 
+| What changes | Example |
+|--------------|---------|
+| All CLI messages | "Rezept gespeichert" |
+| AI-generated recipes | Recipes in German |
+| Shopping categories | "Gemüse", "Milchprodukte" |
+| Cooking units | tbsp → EL, cups → Tassen |
+
+---
+
 ## Data Storage
 
-All data is stored locally in `~/.recipe_box/`:
+Everything stays on your machine:
 
-- `config.json` - Configuration (API key, language)
-- `recipes/` - Saved recipes as JSON files
-- `shopping.json` - Current shopping list
+```
+~/.recipe_box/
+├── config.json      # API key, language
+├── recipes/         # Your saved recipes
+└── shopping.json    # Current shopping list
+```
+
+---
 
 ## Development
 
-### Prerequisites
-
-- Go 1.21+
-- Make
-
-### Commands
-
 ```bash
-make build        # Build the binary
-make test         # Run tests
-make check        # Run fmt, vet, and test
-make test-coverage # Run tests with coverage
-make smoke        # Quick smoke test
-make run ARGS="recipe list"  # Run with arguments
+make build          # Build binary
+make test           # Run tests
+make check          # fmt + vet + test
+make smoke          # Quick smoke test
+make test-coverage  # Coverage report
 ```
 
-### Project Structure
+<details>
+<summary>Project Structure</summary>
 
 ```
 recipe_box/
-├── cmd/           # CLI commands (Cobra)
+├── cmd/              # CLI commands (Cobra)
 ├── internal/
-│   ├── ai/        # Claude API client
-│   ├── config/    # Configuration management
-│   ├── i18n/      # Localization (EN/DE)
-│   ├── recipe/    # Recipe domain logic
-│   ├── shopping/  # Shopping list logic
-│   ├── storage/   # JSON persistence
-│   └── ui/        # Terminal colors/formatting
-├── e2e/           # End-to-end tests
-└── main.go        # Entry point
+│   ├── ai/           # Claude API client
+│   ├── config/       # Configuration
+│   ├── i18n/         # Localization (EN/DE)
+│   ├── recipe/       # Recipe domain
+│   ├── shopping/     # Shopping lists
+│   ├── storage/      # JSON persistence
+│   └── ui/           # Terminal formatting
+├── e2e/              # End-to-end tests
+└── main.go
 ```
+
+</details>
+
+---
 
 ## License
 
-MIT
+MIT — use it, fork it, cook with it.
 
 ## Contributing
 
-Contributions are welcome! Please read the existing code patterns and run `make check` before submitting PRs.
+PRs welcome! Run `make check` before submitting.
