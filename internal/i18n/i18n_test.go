@@ -179,3 +179,123 @@ func TestGetLanguage_Default(t *testing.T) {
 		t.Errorf("expected valid language, got %q", lang)
 	}
 }
+
+// TestAllKeysExistInBothLanguages verifies that every message key defined
+// in the constants has a translation in both EN and DE maps.
+func TestAllKeysExistInBothLanguages(t *testing.T) {
+	// All message keys that should be translated
+	allKeys := []string{
+		MsgError,
+		MsgConfigSet, MsgConfigNotFound,
+		MsgRecipeNotFound, MsgRecipeDeleted, MsgRecipeAdded, MsgRecipeSaved,
+		MsgRecipeListEmpty, MsgRecipeListFound, MsgRecipeGenerating,
+		MsgRecipeSaveHint, MsgRecipeNoGenerated,
+		MsgShoppingEmpty, MsgShoppingEmptyHint, MsgShoppingCleared,
+		MsgShoppingAdded, MsgShoppingShowHint, MsgShoppingListHeader,
+		MsgCategoryProduce, MsgCategoryDairy, MsgCategoryMeat,
+		MsgCategoryPantry, MsgCategoryFrozen, MsgCategoryOther,
+		MsgServings, MsgMinutes, MsgItems,
+		MsgLabelServings, MsgLabelPrepTime, MsgLabelCookTime,
+		MsgLabelTotalTime, MsgLabelTags, MsgLabelIngredients, MsgLabelSteps,
+		MsgRecipeAddHeader, MsgRecipeAddIngredients, MsgRecipeAddSteps,
+		MsgPromptTitle, MsgPromptDescription, MsgPromptServings,
+		MsgPromptPrepTime, MsgPromptCookTime, MsgPromptIngredient,
+		MsgPromptStep, MsgPromptTags,
+		MsgGenerateHeader, MsgGeneratePrompt, MsgGenerateIngredients,
+		MsgGenerateCuisine, MsgGenerateVegetarian, MsgGenerateQuick,
+		MsgGenerateSavePrompt, MsgYes, MsgNo,
+		MsgScaledFrom, MsgGenerateServings,
+		MsgInteractiveMode, MsgInteractiveHint, MsgGoodbye,
+		MsgAvailableCmd, MsgOther,
+		MsgCmdRootShort, MsgCmdRootLong,
+		MsgCmdRecipeShort, MsgCmdRecipeLong,
+		MsgCmdShoppingShort, MsgCmdShoppingLong,
+		MsgCmdConfigShort, MsgCmdConfigLong,
+		MsgCmdHelpShort, MsgCmdExitShort,
+		MsgCmdRecipeListShort, MsgCmdRecipeListLong,
+		MsgCmdRecipeViewShort, MsgCmdRecipeViewLong,
+		MsgCmdRecipeAddShort, MsgCmdRecipeAddLong,
+		MsgCmdRecipeGenerateShort, MsgCmdRecipeGenerateLong,
+		MsgCmdRecipeSaveShort, MsgCmdRecipeSaveLong,
+		MsgCmdRecipeDeleteShort, MsgCmdRecipeDeleteLong,
+		MsgCmdShoppingGenerateShort, MsgCmdShoppingGenerateLong,
+		MsgCmdShoppingShowShort, MsgCmdShoppingShowLong,
+		MsgCmdShoppingClearShort, MsgCmdShoppingClearLong,
+		MsgCmdConfigGetShort, MsgCmdConfigSetShort,
+		MsgConfigKeyAPIKey, MsgConfigKeyLanguage,
+		MsgErrNoAPIKey,
+	}
+
+	for _, key := range allKeys {
+		t.Run("EN_"+key, func(t *testing.T) {
+			if _, ok := messagesEN[key]; !ok {
+				t.Errorf("missing English translation for key: %s", key)
+			}
+		})
+		t.Run("DE_"+key, func(t *testing.T) {
+			if _, ok := messagesDE[key]; !ok {
+				t.Errorf("missing German translation for key: %s", key)
+			}
+		})
+	}
+}
+
+// TestUnit_English verifies unit translations in English
+func TestUnit_English(t *testing.T) {
+	SetLanguage(LangEN)
+	defer ResetLanguage()
+
+	tests := []struct {
+		unit     string
+		expected string
+	}{
+		{"tbsp", "tbsp"}, // English units stay the same
+		{"cup", "cup"},
+		{"tsp", "tsp"},
+		{"g", "g"},
+		{"ml", "ml"},
+		{"unknown", "unknown"}, // Unknown units returned as-is
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.unit, func(t *testing.T) {
+			got := Unit(tt.unit)
+			if got != tt.expected {
+				t.Errorf("Unit(%q) = %q, want %q", tt.unit, got, tt.expected)
+			}
+		})
+	}
+}
+
+// TestUnit_German verifies unit translations in German
+func TestUnit_German(t *testing.T) {
+	SetLanguage(LangDE)
+	defer ResetLanguage()
+
+	tests := []struct {
+		unit     string
+		expected string
+	}{
+		{"tbsp", "EL"},
+		{"tablespoon", "EL"},
+		{"tsp", "TL"},
+		{"teaspoon", "TL"},
+		{"cup", "Tasse"},
+		{"cups", "Tassen"},
+		{"clove", "Zehe"},
+		{"cloves", "Zehen"},
+		{"pinch", "Prise"},
+		{"g", "g"}, // Metric stays the same
+		{"ml", "ml"},
+		{"unknown", "unknown"}, // Unknown units returned as-is
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.unit, func(t *testing.T) {
+			got := Unit(tt.unit)
+			if got != tt.expected {
+				t.Errorf("Unit(%q) = %q, want %q", tt.unit, got, tt.expected)
+			}
+		})
+	}
+}

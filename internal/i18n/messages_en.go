@@ -74,4 +74,62 @@ var messagesEN = map[string]string{
 	MsgGenerateSavePrompt:  "Save this recipe to your collection? (y/n)",
 	MsgYes:                 "y",
 	MsgNo:                  "n",
+
+	// Scaling
+	MsgScaledFrom: "(scaled from %d servings)",
+
+	// Generate servings prompt
+	MsgGenerateServings: "Number of servings (default 4)",
+
+	// Interactive mode
+	MsgInteractiveMode: "Interactive Mode",
+	MsgInteractiveHint: "Type 'help' for commands, 'exit' to quit",
+	MsgGoodbye:         "Goodbye!",
+	MsgAvailableCmd:    "Available Commands:",
+	MsgOther:           "Other",
+
+	// Command descriptions
+	MsgCmdRootShort:     "A CLI for managing recipes and shopping lists",
+	MsgCmdRootLong:      "Recipe Box is a command-line tool for managing your personal recipe collection.\n\nYou can add recipes manually, generate them with AI, and create shopping lists.",
+	MsgCmdRecipeShort:   "Manage recipes",
+	MsgCmdRecipeLong:    "Add, list, view, and delete recipes from your collection.",
+	MsgCmdShoppingShort: "Manage shopping lists",
+	MsgCmdShoppingLong:  "Generate, view, and clear shopping lists from your recipes.",
+	MsgCmdConfigShort:   "Manage configuration",
+	MsgCmdConfigLong:    "View and modify Recipe Box configuration settings.",
+	MsgCmdHelpShort:     "Show available commands",
+	MsgCmdExitShort:     "Exit interactive mode",
+
+	// Recipe subcommand descriptions
+	MsgCmdRecipeListShort:     "List all recipes",
+	MsgCmdRecipeListLong:      "Display all recipes in your collection.",
+	MsgCmdRecipeViewShort:     "View a recipe",
+	MsgCmdRecipeViewLong:      "Display the full details of a recipe.\n\nUse --servings to scale ingredient quantities.",
+	MsgCmdRecipeAddShort:      "Add a new recipe",
+	MsgCmdRecipeAddLong:       "Interactively add a new recipe to your collection.",
+	MsgCmdRecipeGenerateShort: "Generate a recipe with AI",
+	MsgCmdRecipeGenerateLong:  "Generate a recipe using Claude AI.\n\nExamples:\n  recipe_box recipe generate --prompt \"quick pasta dish\"\n  recipe_box recipe generate --ingredients \"chicken, lemon, garlic\"\n  recipe_box recipe generate --cuisine italian --vegetarian\n  recipe_box recipe generate --quick --cuisine mexican",
+	MsgCmdRecipeSaveShort:     "Save the last generated recipe",
+	MsgCmdRecipeSaveLong:      "Save the most recently generated recipe to your collection.\n\nUse this after 'recipe generate' to permanently save a recipe you like.",
+	MsgCmdRecipeDeleteShort:   "Delete a recipe",
+	MsgCmdRecipeDeleteLong:    "Remove a recipe from your collection.",
+
+	// Shopping subcommand descriptions
+	MsgCmdShoppingGenerateShort: "Generate shopping list from recipe",
+	MsgCmdShoppingGenerateLong:  "Add ingredients from a recipe to your shopping list.\n\nUse --servings to scale ingredient quantities for a different number of servings.\n\nExamples:\n  recipe_box shopping generate abc123\n  recipe_box shopping generate abc123 def456\n  recipe_box shopping generate abc123 --servings 8",
+	MsgCmdShoppingShowShort:     "Show current shopping list",
+	MsgCmdShoppingShowLong:      "Show all items in your shopping list, grouped by category.",
+	MsgCmdShoppingClearShort:    "Clear the shopping list",
+	MsgCmdShoppingClearLong:     "Remove all items from your shopping list.",
+
+	// Config subcommand descriptions
+	MsgCmdConfigGetShort: "Get a configuration value",
+	MsgCmdConfigSetShort: "Set a configuration value",
+
+	// Config key descriptions
+	MsgConfigKeyAPIKey:   "Claude API key",
+	MsgConfigKeyLanguage: "Language (en/de)",
+
+	// Error messages
+	MsgErrNoAPIKey: "API key not configured. Run: recipe_box config set api_key <your-key>",
 }

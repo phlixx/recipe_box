@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"recipe_box/internal/i18n"
 	"recipe_box/internal/recipe"
 	"recipe_box/internal/storage"
 	"recipe_box/internal/ui"
@@ -18,8 +19,8 @@ func RunInteractive() {
 	IsInteractive = true
 
 	ui.TitlePrintf("Recipe Box")
-	fmt.Println(" - Interactive Mode")
-	ui.LabelPrintf("Type 'help' for commands, 'exit' to quit\n\n")
+	fmt.Printf(" - %s\n", i18n.T(i18n.MsgInteractiveMode))
+	ui.LabelPrintf("%s\n\n", i18n.T(i18n.MsgInteractiveHint))
 
 	p := prompt.New(
 		executor,
@@ -43,7 +44,7 @@ func executor(input string) {
 
 	// Handle exit command
 	if input == "exit" || input == "quit" {
-		fmt.Println("Goodbye!")
+		fmt.Println(i18n.T(i18n.MsgGoodbye))
 		os.Exit(0)
 	}
 
@@ -121,44 +122,44 @@ func completer(d prompt.Document) []prompt.Suggest {
 
 func topLevelSuggestions() []prompt.Suggest {
 	return []prompt.Suggest{
-		{Text: "recipe", Description: "Manage recipes"},
-		{Text: "shopping", Description: "Manage shopping lists"},
-		{Text: "config", Description: "Manage configuration"},
-		{Text: "help", Description: "Show available commands"},
-		{Text: "exit", Description: "Exit interactive mode"},
+		{Text: "recipe", Description: i18n.T(i18n.MsgCmdRecipeShort)},
+		{Text: "shopping", Description: i18n.T(i18n.MsgCmdShoppingShort)},
+		{Text: "config", Description: i18n.T(i18n.MsgCmdConfigShort)},
+		{Text: "help", Description: i18n.T(i18n.MsgCmdHelpShort)},
+		{Text: "exit", Description: i18n.T(i18n.MsgCmdExitShort)},
 	}
 }
 
 func recipeSuggestions() []prompt.Suggest {
 	return []prompt.Suggest{
-		{Text: "list", Description: "List all recipes"},
-		{Text: "view", Description: "View a recipe"},
-		{Text: "add", Description: "Add a new recipe manually"},
-		{Text: "generate", Description: "Generate a recipe with AI"},
-		{Text: "save", Description: "Save the last generated recipe"},
-		{Text: "delete", Description: "Delete a recipe"},
+		{Text: "list", Description: i18n.T(i18n.MsgCmdRecipeListShort)},
+		{Text: "view", Description: i18n.T(i18n.MsgCmdRecipeViewShort)},
+		{Text: "add", Description: i18n.T(i18n.MsgCmdRecipeAddShort)},
+		{Text: "generate", Description: i18n.T(i18n.MsgCmdRecipeGenerateShort)},
+		{Text: "save", Description: i18n.T(i18n.MsgCmdRecipeSaveShort)},
+		{Text: "delete", Description: i18n.T(i18n.MsgCmdRecipeDeleteShort)},
 	}
 }
 
 func shoppingSuggestions() []prompt.Suggest {
 	return []prompt.Suggest{
-		{Text: "generate", Description: "Generate shopping list from recipe"},
-		{Text: "show", Description: "Show current shopping list"},
-		{Text: "clear", Description: "Clear the shopping list"},
+		{Text: "generate", Description: i18n.T(i18n.MsgCmdShoppingGenerateShort)},
+		{Text: "show", Description: i18n.T(i18n.MsgCmdShoppingShowShort)},
+		{Text: "clear", Description: i18n.T(i18n.MsgCmdShoppingClearShort)},
 	}
 }
 
 func configSuggestions() []prompt.Suggest {
 	return []prompt.Suggest{
-		{Text: "get", Description: "Get a configuration value"},
-		{Text: "set", Description: "Set a configuration value"},
+		{Text: "get", Description: i18n.T(i18n.MsgCmdConfigGetShort)},
+		{Text: "set", Description: i18n.T(i18n.MsgCmdConfigSetShort)},
 	}
 }
 
 func configKeySuggestions() []prompt.Suggest {
 	return []prompt.Suggest{
-		{Text: "api_key", Description: "Claude API key"},
-		{Text: "language", Description: "Language (en/de)"},
+		{Text: "api_key", Description: i18n.T(i18n.MsgConfigKeyAPIKey)},
+		{Text: "language", Description: i18n.T(i18n.MsgConfigKeyLanguage)},
 	}
 }
 
@@ -187,30 +188,30 @@ func recipeIDSuggestions() []prompt.Suggest {
 }
 
 func printHelp() {
-	ui.TitlePrintf("Available Commands:\n\n")
+	ui.TitlePrintf("%s\n\n", i18n.T(i18n.MsgAvailableCmd))
 
 	ui.SectionPrintf("recipe\n")
-	fmt.Println("  list              List all recipes")
-	fmt.Println("  view <id>         View a recipe")
-	fmt.Println("  add               Add a new recipe manually")
-	fmt.Println("  generate          Generate a recipe with AI")
-	fmt.Println("  save              Save the last generated recipe")
-	fmt.Println("  delete <id>       Delete a recipe")
+	fmt.Printf("  list              %s\n", i18n.T(i18n.MsgCmdRecipeListShort))
+	fmt.Printf("  view <id>         %s\n", i18n.T(i18n.MsgCmdRecipeViewShort))
+	fmt.Printf("  add               %s\n", i18n.T(i18n.MsgCmdRecipeAddShort))
+	fmt.Printf("  generate          %s\n", i18n.T(i18n.MsgCmdRecipeGenerateShort))
+	fmt.Printf("  save              %s\n", i18n.T(i18n.MsgCmdRecipeSaveShort))
+	fmt.Printf("  delete <id>       %s\n", i18n.T(i18n.MsgCmdRecipeDeleteShort))
 
 	fmt.Println()
 	ui.SectionPrintf("shopping\n")
-	fmt.Println("  generate <id>     Generate shopping list from recipe")
-	fmt.Println("  show              Show current shopping list")
-	fmt.Println("  clear             Clear the shopping list")
+	fmt.Printf("  generate <id>     %s\n", i18n.T(i18n.MsgCmdShoppingGenerateShort))
+	fmt.Printf("  show              %s\n", i18n.T(i18n.MsgCmdShoppingShowShort))
+	fmt.Printf("  clear             %s\n", i18n.T(i18n.MsgCmdShoppingClearShort))
 
 	fmt.Println()
 	ui.SectionPrintf("config\n")
-	fmt.Println("  get <key>         Get a configuration value")
-	fmt.Println("  set <key> <value> Set a configuration value")
+	fmt.Printf("  get <key>         %s\n", i18n.T(i18n.MsgCmdConfigGetShort))
+	fmt.Printf("  set <key> <value> %s\n", i18n.T(i18n.MsgCmdConfigSetShort))
 
 	fmt.Println()
-	ui.SectionPrintf("Other\n")
-	fmt.Println("  help              Show this help message")
-	fmt.Println("  exit              Exit interactive mode")
+	ui.SectionPrintf("%s\n", i18n.T(i18n.MsgOther))
+	fmt.Printf("  help              %s\n", i18n.T(i18n.MsgCmdHelpShort))
+	fmt.Printf("  exit              %s\n", i18n.T(i18n.MsgCmdExitShort))
 	fmt.Println()
 }

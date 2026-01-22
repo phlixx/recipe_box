@@ -17,13 +17,13 @@ import (
 )
 
 var recipeAddCmd = &cobra.Command{
-	Use:   "add",
-	Short: "Add a new recipe",
-	Long:  `Interactively add a new recipe to your collection.`,
-	RunE:  runRecipeAdd,
+	Use:  "add",
+	RunE: runRecipeAdd,
 }
 
 func init() {
+	recipeAddCmd.Short = i18n.T(i18n.MsgCmdRecipeAddShort)
+	recipeAddCmd.Long = i18n.T(i18n.MsgCmdRecipeAddLong)
 	recipeCmd.AddCommand(recipeAddCmd)
 }
 

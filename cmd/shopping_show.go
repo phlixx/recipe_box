@@ -14,13 +14,13 @@ import (
 )
 
 var shoppingShowCmd = &cobra.Command{
-	Use:   "show",
-	Short: "Display current shopping list",
-	Long:  `Show all items in your shopping list, grouped by category.`,
-	RunE:  runShoppingShow,
+	Use:  "show",
+	RunE: runShoppingShow,
 }
 
 func init() {
+	shoppingShowCmd.Short = i18n.T(i18n.MsgCmdShoppingShowShort)
+	shoppingShowCmd.Long = i18n.T(i18n.MsgCmdShoppingShowLong)
 	shoppingCmd.AddCommand(shoppingShowCmd)
 }
 
@@ -73,5 +73,5 @@ func formatItem(item shopping.Item) string {
 	if item.Unit == "" {
 		return fmt.Sprintf("%g %s", item.Quantity, item.Name)
 	}
-	return fmt.Sprintf("%g %s %s", item.Quantity, item.Unit, item.Name)
+	return fmt.Sprintf("%g %s %s", item.Quantity, i18n.Unit(item.Unit), item.Name)
 }

@@ -79,6 +79,64 @@ const (
 	MsgGenerateSavePrompt  = "generate.save_prompt"
 	MsgYes                 = "yes"
 	MsgNo                  = "no"
+
+	// Scaling
+	MsgScaledFrom = "scaled.from"
+
+	// Generate servings prompt
+	MsgGenerateServings = "generate.servings"
+
+	// Interactive mode
+	MsgInteractiveMode = "interactive.mode"
+	MsgInteractiveHint = "interactive.hint"
+	MsgGoodbye         = "interactive.goodbye"
+	MsgAvailableCmd    = "interactive.available_commands"
+	MsgOther           = "interactive.other"
+
+	// Command descriptions (for Cobra and tab completion)
+	MsgCmdRootShort     = "cmd.root.short"
+	MsgCmdRootLong      = "cmd.root.long"
+	MsgCmdRecipeShort   = "cmd.recipe.short"
+	MsgCmdRecipeLong    = "cmd.recipe.long"
+	MsgCmdShoppingShort = "cmd.shopping.short"
+	MsgCmdShoppingLong  = "cmd.shopping.long"
+	MsgCmdConfigShort   = "cmd.config.short"
+	MsgCmdConfigLong    = "cmd.config.long"
+	MsgCmdHelpShort     = "cmd.help.short"
+	MsgCmdExitShort     = "cmd.exit.short"
+
+	// Recipe subcommand descriptions
+	MsgCmdRecipeListShort     = "cmd.recipe.list.short"
+	MsgCmdRecipeListLong      = "cmd.recipe.list.long"
+	MsgCmdRecipeViewShort     = "cmd.recipe.view.short"
+	MsgCmdRecipeViewLong      = "cmd.recipe.view.long"
+	MsgCmdRecipeAddShort      = "cmd.recipe.add.short"
+	MsgCmdRecipeAddLong       = "cmd.recipe.add.long"
+	MsgCmdRecipeGenerateShort = "cmd.recipe.generate.short"
+	MsgCmdRecipeGenerateLong  = "cmd.recipe.generate.long"
+	MsgCmdRecipeSaveShort     = "cmd.recipe.save.short"
+	MsgCmdRecipeSaveLong      = "cmd.recipe.save.long"
+	MsgCmdRecipeDeleteShort   = "cmd.recipe.delete.short"
+	MsgCmdRecipeDeleteLong    = "cmd.recipe.delete.long"
+
+	// Shopping subcommand descriptions
+	MsgCmdShoppingGenerateShort = "cmd.shopping.generate.short"
+	MsgCmdShoppingGenerateLong  = "cmd.shopping.generate.long"
+	MsgCmdShoppingShowShort     = "cmd.shopping.show.short"
+	MsgCmdShoppingShowLong      = "cmd.shopping.show.long"
+	MsgCmdShoppingClearShort    = "cmd.shopping.clear.short"
+	MsgCmdShoppingClearLong     = "cmd.shopping.clear.long"
+
+	// Config subcommand descriptions
+	MsgCmdConfigGetShort = "cmd.config.get.short"
+	MsgCmdConfigSetShort = "cmd.config.set.short"
+
+	// Config key descriptions
+	MsgConfigKeyAPIKey   = "config.key.api_key"
+	MsgConfigKeyLanguage = "config.key.language"
+
+	// Error messages
+	MsgErrNoAPIKey = "error.no_api_key"
 )
 
 // Supported languages
@@ -179,4 +237,60 @@ func Category(cat string) string {
 // IsValidLanguage checks if a language code is supported
 func IsValidLanguage(lang string) bool {
 	return lang == LangEN || lang == LangDE
+}
+
+// unitTranslations maps English unit names to localized versions
+var unitTranslations = map[string]map[string]string{
+	LangDE: {
+		// Volume
+		"tbsp":        "EL",
+		"tablespoon":  "EL",
+		"tablespoons": "EL",
+		"tsp":         "TL",
+		"teaspoon":    "TL",
+		"teaspoons":   "TL",
+		"cup":         "Tasse",
+		"cups":        "Tassen",
+		// Weight
+		"oz":     "oz",
+		"ounce":  "oz",
+		"ounces": "oz",
+		"lb":     "Pfund",
+		"lbs":    "Pfund",
+		"pound":  "Pfund",
+		"pounds": "Pfund",
+		// Metric units stay the same
+		"g":  "g",
+		"kg": "kg",
+		"ml": "ml",
+		"l":  "l",
+		// Other common units
+		"clove":  "Zehe",
+		"cloves": "Zehen",
+		"bunch":  "Bund",
+		"pinch":  "Prise",
+		"slice":  "Scheibe",
+		"slices": "Scheiben",
+		"piece":  "Stück",
+		"pieces": "Stück",
+		"can":    "Dose",
+		"cans":   "Dosen",
+	},
+	// English keeps original units
+	LangEN: {},
+}
+
+// Unit translates a cooking unit to the current language
+func Unit(unit string) string {
+	lang := GetLanguage()
+
+	// Check if there's a translation for this language
+	if langUnits, ok := unitTranslations[lang]; ok {
+		if translated, ok := langUnits[unit]; ok {
+			return translated
+		}
+	}
+
+	// Return original unit if no translation found
+	return unit
 }

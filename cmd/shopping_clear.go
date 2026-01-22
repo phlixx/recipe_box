@@ -12,13 +12,13 @@ import (
 )
 
 var shoppingClearCmd = &cobra.Command{
-	Use:   "clear",
-	Short: "Clear the shopping list",
-	Long:  `Remove all items from your shopping list.`,
-	RunE:  runShoppingClear,
+	Use:  "clear",
+	RunE: runShoppingClear,
 }
 
 func init() {
+	shoppingClearCmd.Short = i18n.T(i18n.MsgCmdShoppingClearShort)
+	shoppingClearCmd.Long = i18n.T(i18n.MsgCmdShoppingClearLong)
 	shoppingCmd.AddCommand(shoppingClearCmd)
 }
 

@@ -13,15 +13,13 @@ import (
 )
 
 var recipeSaveCmd = &cobra.Command{
-	Use:   "save",
-	Short: "Save the last generated recipe",
-	Long: `Save the most recently generated recipe to your collection.
-
-Run 'recipe generate' first to create a recipe, then use this command to save it.`,
+	Use:  "save",
 	RunE: runRecipeSave,
 }
 
 func init() {
+	recipeSaveCmd.Short = i18n.T(i18n.MsgCmdRecipeSaveShort)
+	recipeSaveCmd.Long = i18n.T(i18n.MsgCmdRecipeSaveLong)
 	recipeCmd.AddCommand(recipeSaveCmd)
 }
 

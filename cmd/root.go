@@ -4,18 +4,18 @@ import (
 	"fmt"
 	"os"
 
+	"recipe_box/internal/i18n"
+
 	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "recipe_box",
-	Short: "A CLI for managing recipes and shopping lists",
-	Long: `Recipe Box is a command-line tool for managing your personal recipe collection.
+	Use: "recipe_box",
+}
 
-You can:
-  - Add, list, and view recipes
-  - Generate shopping lists from selected recipes
-  - Organize recipes by tags and categories`,
+func init() {
+	rootCmd.Short = i18n.T(i18n.MsgCmdRootShort)
+	rootCmd.Long = i18n.T(i18n.MsgCmdRootLong)
 }
 
 func Execute() {

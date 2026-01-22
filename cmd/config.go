@@ -12,15 +12,12 @@ import (
 )
 
 var configCmd = &cobra.Command{
-	Use:   "config",
-	Short: "Manage configuration",
-	Long:  `View and modify Recipe Box configuration settings.`,
+	Use: "config",
 }
 
 var configGetCmd = &cobra.Command{
-	Use:   "get <key>",
-	Short: "Get a configuration value",
-	Args:  cobra.ExactArgs(1),
+	Use:  "get <key>",
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := config.New()
 		if err != nil {
@@ -41,9 +38,8 @@ var configGetCmd = &cobra.Command{
 }
 
 var configSetCmd = &cobra.Command{
-	Use:   "set <key> <value>",
-	Short: "Set a configuration value",
-	Args:  cobra.ExactArgs(2),
+	Use:  "set <key> <value>",
+	Args: cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := config.New()
 		if err != nil {
@@ -60,6 +56,10 @@ var configSetCmd = &cobra.Command{
 }
 
 func init() {
+	configCmd.Short = i18n.T(i18n.MsgCmdConfigShort)
+	configCmd.Long = i18n.T(i18n.MsgCmdConfigLong)
+	configGetCmd.Short = i18n.T(i18n.MsgCmdConfigGetShort)
+	configSetCmd.Short = i18n.T(i18n.MsgCmdConfigSetShort)
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(configGetCmd)
 	configCmd.AddCommand(configSetCmd)

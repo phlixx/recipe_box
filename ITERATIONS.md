@@ -295,8 +295,8 @@ Verfügbare Befehle:
 | Iter | Focus | Key Features | Status |
 |------|-------|--------------|--------|
 | 6 | Interactive Mode | REPL, autocomplete, colors | ✅ Done |
-| 7 | Servings | Scale ingredients up/down | |
-| 8 | Localization+ | Complete translations, units | |
+| 7 | Servings | Scale ingredients up/down | ✅ Done |
+| 8 | Localization+ | Complete translations, units | ✅ Done |
 
 **Total: 3 iterations for v0.2**
 

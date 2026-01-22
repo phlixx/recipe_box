@@ -13,14 +13,14 @@ import (
 )
 
 var recipeDeleteCmd = &cobra.Command{
-	Use:   "delete <id>",
-	Short: "Delete a recipe",
-	Long:  `Remove a recipe from your collection.`,
-	Args:  cobra.ExactArgs(1),
-	RunE:  runRecipeDelete,
+	Use:  "delete <id>",
+	Args: cobra.ExactArgs(1),
+	RunE: runRecipeDelete,
 }
 
 func init() {
+	recipeDeleteCmd.Short = i18n.T(i18n.MsgCmdRecipeDeleteShort)
+	recipeDeleteCmd.Long = i18n.T(i18n.MsgCmdRecipeDeleteLong)
 	recipeCmd.AddCommand(recipeDeleteCmd)
 }
 

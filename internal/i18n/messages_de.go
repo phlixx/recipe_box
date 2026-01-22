@@ -74,4 +74,62 @@ var messagesDE = map[string]string{
 	MsgGenerateSavePrompt:  "Rezept in Sammlung speichern? (j/n)",
 	MsgYes:                 "j",
 	MsgNo:                  "n",
+
+	// Scaling
+	MsgScaledFrom: "(skaliert von %d Portionen)",
+
+	// Generate servings prompt
+	MsgGenerateServings: "Anzahl Portionen (Standard 4)",
+
+	// Interactive mode
+	MsgInteractiveMode: "Interaktiver Modus",
+	MsgInteractiveHint: "Gib 'help' für Befehle ein, 'exit' zum Beenden",
+	MsgGoodbye:         "Auf Wiedersehen!",
+	MsgAvailableCmd:    "Verfügbare Befehle:",
+	MsgOther:           "Sonstiges",
+
+	// Command descriptions
+	MsgCmdRootShort:     "CLI zum Verwalten von Rezepten und Einkaufslisten",
+	MsgCmdRootLong:      "Recipe Box ist ein Kommandozeilen-Tool für deine persönliche Rezeptsammlung.\n\nDu kannst Rezepte manuell hinzufügen, mit KI generieren und Einkaufslisten erstellen.",
+	MsgCmdRecipeShort:   "Rezepte verwalten",
+	MsgCmdRecipeLong:    "Rezepte hinzufügen, auflisten, anzeigen und löschen.",
+	MsgCmdShoppingShort: "Einkaufslisten verwalten",
+	MsgCmdShoppingLong:  "Einkaufslisten aus Rezepten erstellen, anzeigen und leeren.",
+	MsgCmdConfigShort:   "Einstellungen verwalten",
+	MsgCmdConfigLong:    "Recipe Box Einstellungen anzeigen und ändern.",
+	MsgCmdHelpShort:     "Verfügbare Befehle anzeigen",
+	MsgCmdExitShort:     "Interaktiven Modus beenden",
+
+	// Recipe subcommand descriptions
+	MsgCmdRecipeListShort:     "Alle Rezepte auflisten",
+	MsgCmdRecipeListLong:      "Zeigt alle Rezepte deiner Sammlung an.",
+	MsgCmdRecipeViewShort:     "Rezept anzeigen",
+	MsgCmdRecipeViewLong:      "Zeigt alle Details eines Rezepts an.\n\nMit --servings kannst du die Zutatenmengen skalieren.",
+	MsgCmdRecipeAddShort:      "Neues Rezept hinzufügen",
+	MsgCmdRecipeAddLong:       "Fügt interaktiv ein neues Rezept zu deiner Sammlung hinzu.",
+	MsgCmdRecipeGenerateShort: "Rezept mit KI generieren",
+	MsgCmdRecipeGenerateLong:  "Generiert ein Rezept mit Claude AI.\n\nBeispiele:\n  recipe_box recipe generate --prompt \"schnelles Nudelgericht\"\n  recipe_box recipe generate --ingredients \"Hähnchen, Zitrone, Knoblauch\"\n  recipe_box recipe generate --cuisine italienisch --vegetarian\n  recipe_box recipe generate --quick --cuisine mexikanisch",
+	MsgCmdRecipeSaveShort:     "Letztes generiertes Rezept speichern",
+	MsgCmdRecipeSaveLong:      "Speichert das zuletzt generierte Rezept in deiner Sammlung.\n\nNutze dies nach 'recipe generate', um ein Rezept dauerhaft zu speichern.",
+	MsgCmdRecipeDeleteShort:   "Rezept löschen",
+	MsgCmdRecipeDeleteLong:    "Entfernt ein Rezept aus deiner Sammlung.",
+
+	// Shopping subcommand descriptions
+	MsgCmdShoppingGenerateShort: "Einkaufsliste aus Rezept erstellen",
+	MsgCmdShoppingGenerateLong:  "Fügt Zutaten eines Rezepts zur Einkaufsliste hinzu.\n\nMit --servings kannst du die Mengen für eine andere Portionsanzahl skalieren.\n\nBeispiele:\n  recipe_box shopping generate abc123\n  recipe_box shopping generate abc123 def456\n  recipe_box shopping generate abc123 --servings 8",
+	MsgCmdShoppingShowShort:     "Aktuelle Einkaufsliste anzeigen",
+	MsgCmdShoppingShowLong:      "Zeigt alle Artikel der Einkaufsliste, nach Kategorien gruppiert.",
+	MsgCmdShoppingClearShort:    "Einkaufsliste leeren",
+	MsgCmdShoppingClearLong:     "Entfernt alle Artikel von der Einkaufsliste.",
+
+	// Config subcommand descriptions
+	MsgCmdConfigGetShort: "Einstellung abrufen",
+	MsgCmdConfigSetShort: "Einstellung setzen",
+
+	// Config key descriptions
+	MsgConfigKeyAPIKey:   "Claude API-Schlüssel",
+	MsgConfigKeyLanguage: "Sprache (en/de)",
+
+	// Error messages
+	MsgErrNoAPIKey: "API-Schlüssel nicht konfiguriert. Führe aus: recipe_box config set api_key <dein-schlüssel>",
 }

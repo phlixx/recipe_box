@@ -12,13 +12,13 @@ import (
 )
 
 var recipeListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List all recipes",
-	Long:  `Display all recipes in your collection.`,
-	RunE:  runRecipeList,
+	Use:  "list",
+	RunE: runRecipeList,
 }
 
 func init() {
+	recipeListCmd.Short = i18n.T(i18n.MsgCmdRecipeListShort)
+	recipeListCmd.Long = i18n.T(i18n.MsgCmdRecipeListLong)
 	recipeCmd.AddCommand(recipeListCmd)
 }
 

@@ -2,14 +2,12 @@
 
 See `ITERATIONS.md` for full iteration plan.
 
-## Current: Iteration 7 - Servings Scaling
+## Testing Gaps
 
-- [ ] Add `--servings` flag to `recipe view`
-- [ ] Add `--servings` flag to `recipe generate`
-- [ ] Add `--servings` flag to `shopping generate`
-- [ ] Add `Scale()` method to recipe model
-- [ ] Display both original and scaled servings
+- [ ] E2E test for `recipe generate` (requires API mock or integration flag)
+- [ ] E2E test for `recipe add` in interactive mode (PTY-based)
+- [ ] E2E test for `--servings` flag on view/shopping commands
 
 ## Up Next
 
-**Iteration 8**: Localization hardening (all strings, units)
+**README.md**: Create comprehensive documentation for the repository
