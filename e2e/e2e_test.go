@@ -3,6 +3,9 @@ package e2e
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -1081,5 +1084,367 @@ func TestInteractive_ConfigPersists(t *testing.T) {
 
 	if !strings.Contains(output, "de") {
 		t.Errorf("expected 'de' in config get, got: %s", output)
+	}
+}
+
+// =============================================================================
+// Mock API Server for Testing
+// =============================================================================
+
+// mockAPIResponse returns a Claude API response with a recipe JSON
+func mockAPIResponse(recipeJSON string) string {
+	return fmt.Sprintf(`{
+		"content": [
+			{
+				"type": "text",
+				"text": %s
+			}
+		]
+	}`, recipeJSON)
+}
+
+// startMockAPIServer starts a mock server that returns canned recipe responses
+func startMockAPIServer(t *testing.T) *httptest.Server {
+	t.Helper()
+
+	// Sample recipe response that Claude would return
+	recipeJSON := `"{\"title\":\"Mock Pasta Carbonara\",\"description\":\"A creamy Italian classic\",\"servings\":4,\"prep_time\":10,\"cook_time\":20,\"ingredients\":[{\"name\":\"spaghetti\",\"quantity\":400,\"unit\":\"g\",\"category\":\"pantry\"},{\"name\":\"pancetta\",\"quantity\":200,\"unit\":\"g\",\"category\":\"meat\"},{\"name\":\"eggs\",\"quantity\":3,\"unit\":\"pcs\",\"category\":\"dairy\"},{\"name\":\"parmesan\",\"quantity\":100,\"unit\":\"g\",\"category\":\"dairy\"}],\"steps\":[\"Boil pasta until al dente\",\"Fry pancetta until crispy\",\"Mix eggs with parmesan\",\"Combine all ingredients\"],\"tags\":[\"italian\",\"pasta\",\"quick\"],\"ascii_art\":\"  ____\\n /    \\\\\\n| PASTA |\\n \\\\____/\"}"`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify it's a POST request with correct headers
+		if r.Method != "POST" {
+			t.Errorf("expected POST, got %s", r.Method)
+		}
+		if r.Header.Get("x-api-key") == "" {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte(`{"error": "missing API key"}`))
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(mockAPIResponse(recipeJSON)))
+	}))
+
+	return server
+}
+
+// runCmdWithEnv executes the CLI with additional environment variables
+func runCmdWithEnv(t *testing.T, homeDir string, env map[string]string, args ...string) (string, string, error) {
+	t.Helper()
+
+	cmd := exec.Command(binaryPath, args...)
+
+	// Start with base env
+	cmdEnv := append(os.Environ(), "RECIPE_BOX_HOME="+homeDir, "NO_COLOR=1")
+
+	// Add custom env vars
+	for k, v := range env {
+		cmdEnv = append(cmdEnv, k+"="+v)
+	}
+	cmd.Env = cmdEnv
+
+	var stdout, stderr strings.Builder
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	return stdout.String(), stderr.String(), err
+}
+
+// =============================================================================
+// Recipe Generate Tests (with Mock API)
+// =============================================================================
+
+func TestRecipe_GenerateWithMockAPI(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Start mock API server
+	server := startMockAPIServer(t)
+	defer server.Close()
+
+	// Set API key in config
+	_, _, err := runCmd(t, home, "config", "set", "api_key", "test-key-123")
+	if err != nil {
+		t.Fatalf("failed to set API key: %v", err)
+	}
+
+	// Run generate with mock API URL
+	env := map[string]string{"ANTHROPIC_API_URL": server.URL}
+	stdout, stderr, err := runCmdWithEnv(t, home, env, "recipe", "generate", "--prompt", "pasta dish")
+	if err != nil {
+		t.Fatalf("recipe generate failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Verify recipe was generated
+	if !strings.Contains(stdout, "Mock Pasta Carbonara") {
+		t.Errorf("expected recipe title in output, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "spaghetti") {
+		t.Errorf("expected ingredient in output, got: %s", stdout)
+	}
+}
+
+func TestRecipe_GenerateAndSaveWithMockAPI(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Start mock API server
+	server := startMockAPIServer(t)
+	defer server.Close()
+
+	// Set API key
+	_, _, err := runCmd(t, home, "config", "set", "api_key", "test-key-123")
+	if err != nil {
+		t.Fatalf("failed to set API key: %v", err)
+	}
+
+	// Generate recipe
+	env := map[string]string{"ANTHROPIC_API_URL": server.URL}
+	_, stderr, err := runCmdWithEnv(t, home, env, "recipe", "generate", "--prompt", "pasta")
+	if err != nil {
+		t.Fatalf("recipe generate failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Save the generated recipe
+	stdout, stderr, err := runCmd(t, home, "recipe", "save")
+	if err != nil {
+		t.Fatalf("recipe save failed: %v\nstderr: %s", err, stderr)
+	}
+	if !strings.Contains(stdout, "saved") && !strings.Contains(stdout, "gespeichert") {
+		t.Errorf("expected save confirmation, got: %s", stdout)
+	}
+
+	// Verify it appears in list
+	stdout, _, err = runCmd(t, home, "recipe", "list")
+	if err != nil {
+		t.Fatalf("recipe list failed: %v", err)
+	}
+	if !strings.Contains(stdout, "Mock Pasta Carbonara") {
+		t.Errorf("expected saved recipe in list, got: %s", stdout)
+	}
+}
+
+func TestRecipe_GenerateWithoutAPIKey(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Try to generate without setting API key
+	_, stderr, err := runCmd(t, home, "recipe", "generate", "--prompt", "pasta")
+	if err == nil {
+		t.Error("expected error when generating without API key")
+	}
+	if !strings.Contains(stderr, "API key") && !strings.Contains(stderr, "api_key") {
+		t.Errorf("expected API key error, got: %s", stderr)
+	}
+}
+
+func TestRecipe_GenerateWithFlags(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Start mock API server
+	server := startMockAPIServer(t)
+	defer server.Close()
+
+	// Set API key
+	_, _, err := runCmd(t, home, "config", "set", "api_key", "test-key-123")
+	if err != nil {
+		t.Fatalf("failed to set API key: %v", err)
+	}
+
+	// Generate with various flags
+	env := map[string]string{"ANTHROPIC_API_URL": server.URL}
+	stdout, stderr, err := runCmdWithEnv(t, home, env, "recipe", "generate",
+		"--prompt", "italian dinner",
+		"--cuisine", "italian",
+		"--vegetarian",
+		"--quick")
+	if err != nil {
+		t.Fatalf("recipe generate with flags failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Verify recipe was generated (mock returns same recipe regardless of flags)
+	if !strings.Contains(stdout, "Mock Pasta Carbonara") {
+		t.Errorf("expected recipe in output, got: %s", stdout)
+	}
+}
+
+// =============================================================================
+// Servings Scaling Tests
+// =============================================================================
+
+func TestRecipe_ViewWithServingsScaling(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a recipe with known quantities
+	recipe := map[string]interface{}{
+		"id":          "scale-test",
+		"title":       "Scalable Recipe",
+		"description": "Test recipe for scaling",
+		"servings":    2,
+		"prep_time":   10,
+		"cook_time":   20,
+		"ingredients": []map[string]interface{}{
+			{"name": "flour", "quantity": 200, "unit": "g", "category": "pantry"},
+			{"name": "sugar", "quantity": 100, "unit": "g", "category": "pantry"},
+			{"name": "eggs", "quantity": 2, "unit": "pcs", "category": "dairy"},
+		},
+		"steps":    []string{"Mix ingredients", "Bake"},
+		"tags":     []string{"baking"},
+		"source":   "manual",
+		"language": "en",
+	}
+
+	recipes := []interface{}{recipe}
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	if err := os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644); err != nil {
+		t.Fatalf("failed to write test recipe: %v", err)
+	}
+
+	// View with scaled servings (2 -> 4 = 2x)
+	stdout, _, err := runCmd(t, home, "recipe", "view", "scale-test", "--servings", "4")
+	if err != nil {
+		t.Fatalf("recipe view with servings failed: %v", err)
+	}
+
+	// Check scaling indicator is shown
+	if !strings.Contains(stdout, "4") {
+		t.Errorf("expected scaled servings (4) in output, got: %s", stdout)
+	}
+
+	// Flour should be 400g (200 * 2)
+	if !strings.Contains(stdout, "400") {
+		t.Errorf("expected scaled flour (400g) in output, got: %s", stdout)
+	}
+
+	// Sugar should be 200g (100 * 2)
+	if !strings.Contains(stdout, "200") && !strings.Contains(stdout, "sugar") {
+		t.Errorf("expected scaled sugar in output, got: %s", stdout)
+	}
+
+	// Eggs should be 4 (2 * 2)
+	if !strings.Contains(stdout, "4") && !strings.Contains(stdout, "eggs") {
+		t.Errorf("expected scaled eggs in output, got: %s", stdout)
+	}
+}
+
+func TestShopping_GenerateWithServingsScaling(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a recipe
+	recipe := map[string]interface{}{
+		"id":       "shop-scale-test",
+		"title":    "Shopping Scale Test",
+		"servings": 2,
+		"ingredients": []map[string]interface{}{
+			{"name": "pasta", "quantity": 250, "unit": "g", "category": "pantry"},
+			{"name": "tomatoes", "quantity": 400, "unit": "g", "category": "produce"},
+		},
+		"steps":    []string{"Cook"},
+		"source":   "manual",
+		"language": "en",
+	}
+
+	recipes := []interface{}{recipe}
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	if err := os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644); err != nil {
+		t.Fatalf("failed to write test recipe: %v", err)
+	}
+
+	// Generate shopping list with scaled servings (2 -> 6 = 3x)
+	stdout, _, err := runCmd(t, home, "shopping", "generate", "shop-scale-test", "--servings", "6")
+	if err != nil {
+		t.Fatalf("shopping generate with servings failed: %v", err)
+	}
+
+	// Should show success
+	if !strings.Contains(stdout, "Added") && !strings.Contains(stdout, "hinzugefügt") {
+		t.Errorf("expected success message, got: %s", stdout)
+	}
+
+	// Show shopping list
+	stdout, _, err = runCmd(t, home, "shopping", "show")
+	if err != nil {
+		t.Fatalf("shopping show failed: %v", err)
+	}
+
+	// Pasta should be 750g (250 * 3)
+	if !strings.Contains(stdout, "750") {
+		t.Errorf("expected scaled pasta (750g) in output, got: %s", stdout)
+	}
+
+	// Tomatoes should be 1200g (400 * 3)
+	if !strings.Contains(stdout, "1200") {
+		t.Errorf("expected scaled tomatoes (1200g) in output, got: %s", stdout)
+	}
+}
+
+// =============================================================================
+// Interactive Mode: Recipe Add Test
+// =============================================================================
+
+func TestInteractive_RecipeAdd(t *testing.T) {
+	home := setupTestHome(t)
+	session := startInteractive(t, home)
+	defer session.close()
+
+	// Start recipe add
+	session.send("recipe add")
+	time.Sleep(300 * time.Millisecond)
+
+	// Enter recipe details one by one
+	// Title
+	session.send("Interactive Test Cake")
+	time.Sleep(100 * time.Millisecond)
+
+	// Description
+	session.send("A cake made in interactive mode")
+	time.Sleep(100 * time.Millisecond)
+
+	// Servings
+	session.send("8")
+	time.Sleep(100 * time.Millisecond)
+
+	// Prep time
+	session.send("15")
+	time.Sleep(100 * time.Millisecond)
+
+	// Cook time
+	session.send("45")
+	time.Sleep(100 * time.Millisecond)
+
+	// Ingredients
+	session.send("300 g flour")
+	time.Sleep(100 * time.Millisecond)
+	session.send("200 g sugar")
+	time.Sleep(100 * time.Millisecond)
+	session.send("4 eggs")
+	time.Sleep(100 * time.Millisecond)
+	session.send("") // Empty line to finish ingredients
+	time.Sleep(100 * time.Millisecond)
+
+	// Steps
+	session.send("Mix dry ingredients")
+	time.Sleep(100 * time.Millisecond)
+	session.send("Add eggs")
+	time.Sleep(100 * time.Millisecond)
+	session.send("Bake at 180C")
+	time.Sleep(100 * time.Millisecond)
+	session.send("") // Empty line to finish steps
+	time.Sleep(100 * time.Millisecond)
+
+	// Tags
+	session.send("dessert, baking")
+	output := session.waitAndRead(1 * time.Second)
+
+	// Verify success message
+	if !strings.Contains(output, "added") && !strings.Contains(output, "hinzugefügt") {
+		t.Errorf("expected 'added' confirmation, got: %s", output)
+	}
+
+	// Verify recipe is in list
+	session.send("recipe list")
+	output = session.waitAndRead(500 * time.Millisecond)
+
+	if !strings.Contains(output, "Interactive Test Cake") {
+		t.Errorf("expected recipe in list, got: %s", output)
 	}
 }

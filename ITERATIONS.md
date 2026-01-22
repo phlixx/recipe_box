@@ -302,12 +302,162 @@ Verfügbare Befehle:
 
 ---
 
-## Future Phases (Ideas)
+## Phase 2: Meal Planning (v0.3)
 
-**Phase 2 - Meal Planning**:
-- Weekly meal planner
-- Leftover tracking
-- Shopping from plan
+```
+Iter 9:  Plan Foundation    → Data model, create/show/clear
+Iter 10: Plan Management    → Add/remove recipes, leftover tracking
+Iter 11: Shopping from Plan → Aggregate ingredients from plan
+Iter 12: AI Meal Planning   → AI suggests balanced week
+```
+
+---
+
+## Iteration 9: Meal Plan Foundation
+
+**Goal**: Basic infrastructure and view commands
+
+**Deliverables**:
+- [ ] Data model (`internal/plan/plan.go`)
+- [ ] Service layer (`internal/plan/service.go`)
+- [ ] `plan create [--days N]` - Create empty plan (default 7 days)
+- [ ] `plan show` - Display current plan
+- [ ] `plan clear` - Clear the plan
+- [ ] i18n keys for all new strings
+
+**Data Model**:
+```go
+type MealPlan struct {
+    ID        string      `json:"id"`
+    StartDate string      `json:"start_date"` // ISO 8601
+    Days      int         `json:"days"`
+    Entries   []PlanEntry `json:"entries"`
+}
+
+type PlanEntry struct {
+    Date       string `json:"date"`       // ISO 8601
+    RecipeID   string `json:"recipe_id"`
+    Servings   int    `json:"servings"`
+    CoversDays int    `json:"covers_days"` // leftover tracking
+}
+```
+
+**Storage**: `~/.recipe_box/meal_plan.json`
+
+**Exit Criteria**:
+```bash
+recipe_box plan create --days 7
+recipe_box plan show    # Shows empty 7-day calendar
+recipe_box plan clear
+```
+
+**Files to create**:
+- `internal/plan/plan.go`
+- `internal/plan/service.go`
+- `internal/plan/service_test.go`
+- `cmd/plan.go`
+- `cmd/plan_create.go`
+- `cmd/plan_show.go`
+- `cmd/plan_clear.go`
+
+---
+
+## Iteration 10: Meal Plan Management
+
+**Goal**: Add/remove recipes to plan entries
+
+**Deliverables**:
+- [ ] `plan add <day> <recipe-id> [--servings N] [--days N]` - Assign recipe to day
+- [ ] `plan remove <day>` - Remove entry from day
+- [ ] Day name support: "monday", "tuesday", etc. (maps to date in plan)
+- [ ] Leftover visualization in `plan show`
+- [ ] Tab completion for day names + recipe IDs
+
+**Exit Criteria**:
+```bash
+recipe_box plan add monday abc123 --servings 4 --days 2
+recipe_box plan show
+# Monday:    Chicken Teriyaki (4 servings, covers 2 days)
+# Tuesday:   ← leftovers from Monday
+# Wednesday: (empty)
+
+recipe_box plan remove monday
+```
+
+**Files to create/modify**:
+- `cmd/plan_add.go`
+- `cmd/plan_remove.go`
+- `cmd/interactive.go` (add tab completion)
+- `internal/plan/service.go` (Add, Remove methods)
+
+---
+
+## Iteration 11: Shopping from Plan
+
+**Goal**: Generate aggregated shopping list from meal plan
+
+**Deliverables**:
+- [ ] `shopping generate --plan` - Generate from entire meal plan
+- [ ] `shopping generate --plan --days N` - Generate from first N days
+- [ ] Aggregate ingredients across all plan entries
+- [ ] Scale quantities by servings
+- [ ] Track which recipe each item came from
+
+**Exit Criteria**:
+```bash
+recipe_box shopping generate --plan
+# Aggregates ingredients from all planned recipes
+
+recipe_box shopping show
+# Produce:
+#   - 4 onions (Chicken Teriyaki, Pasta Primavera)
+#   - 500g tomatoes (Pasta Primavera)
+```
+
+**Files to modify**:
+- `cmd/shopping_generate.go` (add --plan flag)
+- `internal/shopping/shopping.go` (GenerateFromPlan method)
+- `internal/shopping/shopping_test.go`
+
+---
+
+## Iteration 12: AI Meal Planning
+
+**Goal**: AI suggests a balanced week of meals
+
+**Deliverables**:
+- [ ] `plan generate [--days N]` - AI generates meal suggestions
+- [ ] Cuisine/dietary constraints (reuse recipe generate flags)
+- [ ] Option to auto-create recipes or just show suggestions
+- [ ] Balance considerations (variety, nutrition)
+
+**Exit Criteria**:
+```bash
+recipe_box plan generate --days 7 --vegetarian
+# AI suggests 7 days of balanced vegetarian meals
+# User can approve/modify before saving
+```
+
+**Files to create/modify**:
+- `cmd/plan_generate.go`
+- `internal/ai/claude.go` (GenerateMealPlan method)
+
+---
+
+## Summary - Phase 2
+
+| Iter | Focus | Key Commands | Status |
+|------|-------|--------------|--------|
+| 9 | Plan Foundation | `plan create/show/clear` | Pending |
+| 10 | Plan Management | `plan add/remove` | Pending |
+| 11 | Shopping from Plan | `shopping generate --plan` | Pending |
+| 12 | AI Meal Planning | `plan generate` | Pending |
+
+**Total: 4 iterations for v0.3**
+
+---
+
+## Future Phases (Ideas)
 
 **Phase 3 - Advanced Features**:
 - Recipe import from URL

@@ -7,16 +7,25 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"recipe_box/internal/recipe"
 )
 
 const (
-	apiURL     = "https://api.anthropic.com/v1/messages"
-	apiVersion = "2023-06-01"
-	model      = "claude-sonnet-4-20250514"
+	defaultAPIURL = "https://api.anthropic.com/v1/messages"
+	apiVersion    = "2023-06-01"
+	model         = "claude-sonnet-4-20250514"
 )
+
+// getAPIURL returns the API URL, allowing override via environment variable for testing
+func getAPIURL() string {
+	if url := os.Getenv("ANTHROPIC_API_URL"); url != "" {
+		return url
+	}
+	return defaultAPIURL
+}
 
 var (
 	ErrNoAPIKey       = errors.New("API key not configured - run: recipe_box config set api_key <your-key>")
@@ -69,7 +78,7 @@ func (c *Client) GenerateRecipe(opts GenerateOptions) (*recipe.Recipe, error) {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", apiURL, bytes.NewReader(body))
+	req, err := http.NewRequest("POST", getAPIURL(), bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
