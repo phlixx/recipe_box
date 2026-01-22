@@ -12,20 +12,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var shoppingGenerateCmd = &cobra.Command{
-	Use:   "generate <recipe-id>",
-	Short: "Generate shopping list from a recipe",
-	Long: `Add ingredients from a recipe to your shopping list.
+var shoppingServings int
 
-Examples:
-  recipe_box shopping generate abc123
-  recipe_box shopping generate abc123 def456`,
+var shoppingGenerateCmd = &cobra.Command{
+	Use:  "generate <recipe-id>",
 	Args: cobra.MinimumNArgs(1),
 	RunE: runShoppingGenerate,
 }
 
 func init() {
+	shoppingGenerateCmd.Short = i18n.T(i18n.MsgCmdShoppingGenerateShort)
+	shoppingGenerateCmd.Long = i18n.T(i18n.MsgCmdShoppingGenerateLong)
 	shoppingCmd.AddCommand(shoppingGenerateCmd)
+	shoppingGenerateCmd.Flags().IntVarP(&shoppingServings, "servings", "s", 0, "Scale recipe to this number of servings")
 }
 
 func runShoppingGenerate(cmd *cobra.Command, args []string) error {
@@ -46,6 +45,11 @@ func runShoppingGenerate(cmd *cobra.Command, args []string) error {
 				continue
 			}
 			return fmt.Errorf("failed to get recipe %s: %w", id, err)
+		}
+
+		// Scale recipe if --servings flag is provided
+		if shoppingServings > 0 && shoppingServings != r.Servings {
+			r = r.Scale(shoppingServings)
 		}
 
 		if err := shoppingSvc.GenerateFromRecipe(r); err != nil {

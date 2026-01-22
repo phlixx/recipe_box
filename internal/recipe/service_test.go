@@ -186,3 +186,143 @@ func (s *testStorage) Delete(filename string) error {
 	path := filepath.Join(s.baseDir, filename)
 	return os.Remove(path)
 }
+
+func TestRecipe_Scale(t *testing.T) {
+	tests := []struct {
+		name           string
+		original       *Recipe
+		targetServings int
+		wantServings   int
+		wantQuantities []float64
+	}{
+		{
+			name: "scale up from 4 to 8 servings",
+			original: &Recipe{
+				Title:    "Test Recipe",
+				Servings: 4,
+				Ingredients: []Ingredient{
+					{Name: "flour", Quantity: 2, Unit: "cups"},
+					{Name: "sugar", Quantity: 1, Unit: "cup"},
+				},
+				Steps: []string{"Mix", "Bake"},
+				Tags:  []string{"dessert"},
+			},
+			targetServings: 8,
+			wantServings:   8,
+			wantQuantities: []float64{4, 2},
+		},
+		{
+			name: "scale down from 4 to 2 servings",
+			original: &Recipe{
+				Title:    "Test Recipe",
+				Servings: 4,
+				Ingredients: []Ingredient{
+					{Name: "flour", Quantity: 2, Unit: "cups"},
+					{Name: "sugar", Quantity: 1, Unit: "cup"},
+				},
+			},
+			targetServings: 2,
+			wantServings:   2,
+			wantQuantities: []float64{1, 0.5},
+		},
+		{
+			name: "same servings returns copy",
+			original: &Recipe{
+				Title:    "Test Recipe",
+				Servings: 4,
+				Ingredients: []Ingredient{
+					{Name: "flour", Quantity: 2, Unit: "cups"},
+				},
+			},
+			targetServings: 4,
+			wantServings:   4,
+			wantQuantities: []float64{2},
+		},
+		{
+			name: "zero target returns original",
+			original: &Recipe{
+				Title:    "Test Recipe",
+				Servings: 4,
+				Ingredients: []Ingredient{
+					{Name: "flour", Quantity: 2, Unit: "cups"},
+				},
+			},
+			targetServings: 0,
+			wantServings:   4,
+			wantQuantities: []float64{2},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			scaled := tt.original.Scale(tt.targetServings)
+
+			if scaled.Servings != tt.wantServings {
+				t.Errorf("Servings = %d, want %d", scaled.Servings, tt.wantServings)
+			}
+
+			for i, want := range tt.wantQuantities {
+				if scaled.Ingredients[i].Quantity != want {
+					t.Errorf("Ingredient[%d].Quantity = %v, want %v", i, scaled.Ingredients[i].Quantity, want)
+				}
+			}
+
+			// Verify original is not modified
+			if tt.original.Servings != 4 {
+				t.Error("original recipe was modified")
+			}
+		})
+	}
+}
+
+func TestRecipe_Scale_PreservesOtherFields(t *testing.T) {
+	original := &Recipe{
+		ID:          "abc123",
+		Title:       "Test Recipe",
+		Description: "A test",
+		Servings:    4,
+		PrepTime:    10,
+		CookTime:    20,
+		Ingredients: []Ingredient{
+			{Name: "flour", Quantity: 2, Unit: "cups", Category: "pantry"},
+		},
+		Steps:    []string{"Step 1", "Step 2"},
+		Tags:     []string{"test", "dessert"},
+		Source:   SourceManual,
+		Language: LangEN,
+		AsciiArt: "art",
+	}
+
+	scaled := original.Scale(8)
+
+	if scaled.ID != original.ID {
+		t.Error("ID not preserved")
+	}
+	if scaled.Title != original.Title {
+		t.Error("Title not preserved")
+	}
+	if scaled.Description != original.Description {
+		t.Error("Description not preserved")
+	}
+	if scaled.PrepTime != original.PrepTime {
+		t.Error("PrepTime not preserved")
+	}
+	if scaled.CookTime != original.CookTime {
+		t.Error("CookTime not preserved")
+	}
+	if scaled.Source != original.Source {
+		t.Error("Source not preserved")
+	}
+	if scaled.Language != original.Language {
+		t.Error("Language not preserved")
+	}
+	if scaled.AsciiArt != original.AsciiArt {
+		t.Error("AsciiArt not preserved")
+	}
+	if len(scaled.Steps) != len(original.Steps) {
+		t.Error("Steps length mismatch")
+	}
+	if len(scaled.Tags) != len(original.Tags) {
+		t.Error("Tags length mismatch")
+	}
+}

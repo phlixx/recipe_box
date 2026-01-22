@@ -45,6 +45,7 @@ type GenerateOptions struct {
 	Vegetarian  bool
 	Quick       bool   // under 30 min
 	Language    string // "en" or "de"
+	Servings    int    // target servings (0 = default/4)
 }
 
 func (c *Client) GenerateRecipe(opts GenerateOptions) (*recipe.Recipe, error) {
@@ -118,6 +119,9 @@ func buildPrompt(opts GenerateOptions) string {
 	}
 	if len(opts.Ingredients) > 0 {
 		constraints = append(constraints, fmt.Sprintf("Must use these ingredients: %s", strings.Join(opts.Ingredients, ", ")))
+	}
+	if opts.Servings > 0 {
+		constraints = append(constraints, fmt.Sprintf("Recipe must be for exactly %d servings", opts.Servings))
 	}
 
 	var userRequest string

@@ -27,22 +27,17 @@ var (
 	generateCuisine     string
 	generateVegetarian  bool
 	generateQuick       bool
+	generateServings    int
 )
 
 var recipeGenerateCmd = &cobra.Command{
-	Use:   "generate",
-	Short: "Generate a recipe using AI",
-	Long: `Generate a recipe using Claude AI.
-
-Examples:
-  recipe_box recipe generate --prompt "quick pasta dish"
-  recipe_box recipe generate --ingredients "chicken, lemon, garlic"
-  recipe_box recipe generate --cuisine italian --vegetarian
-  recipe_box recipe generate --quick --cuisine mexican`,
+	Use:  "generate",
 	RunE: runRecipeGenerate,
 }
 
 func init() {
+	recipeGenerateCmd.Short = i18n.T(i18n.MsgCmdRecipeGenerateShort)
+	recipeGenerateCmd.Long = i18n.T(i18n.MsgCmdRecipeGenerateLong)
 	recipeCmd.AddCommand(recipeGenerateCmd)
 
 	recipeGenerateCmd.Flags().StringVarP(&generatePrompt, "prompt", "p", "", "Recipe description or request")
@@ -50,6 +45,7 @@ func init() {
 	recipeGenerateCmd.Flags().StringVarP(&generateCuisine, "cuisine", "c", "", "Cuisine type (e.g., italian, mexican, asian)")
 	recipeGenerateCmd.Flags().BoolVarP(&generateVegetarian, "vegetarian", "v", false, "Generate a vegetarian recipe")
 	recipeGenerateCmd.Flags().BoolVarP(&generateQuick, "quick", "q", false, "Quick recipe (under 30 min total)")
+	recipeGenerateCmd.Flags().IntVarP(&generateServings, "servings", "s", 0, "Number of servings (default: 4)")
 }
 
 func runRecipeGenerate(cmd *cobra.Command, args []string) error {
@@ -61,7 +57,7 @@ func runRecipeGenerate(cmd *cobra.Command, args []string) error {
 
 	apiKey, err := cfg.Get("api_key")
 	if err != nil {
-		return ai.ErrNoAPIKey
+		return fmt.Errorf(i18n.T(i18n.MsgErrNoAPIKey))
 	}
 
 	// Create AI client
@@ -75,7 +71,8 @@ func runRecipeGenerate(cmd *cobra.Command, args []string) error {
 		cmd.Flags().Changed("ingredients") ||
 		cmd.Flags().Changed("cuisine") ||
 		cmd.Flags().Changed("vegetarian") ||
-		cmd.Flags().Changed("quick")
+		cmd.Flags().Changed("quick") ||
+		cmd.Flags().Changed("servings")
 
 	// If in interactive mode and no flags provided, prompt for options
 	if IsInteractive && !flagsProvided {
@@ -103,6 +100,7 @@ func runRecipeGenerate(cmd *cobra.Command, args []string) error {
 		Vegetarian:  generateVegetarian,
 		Quick:       generateQuick,
 		Language:    i18n.GetLanguage(),
+		Servings:    generateServings,
 	}
 
 	fmt.Println()
@@ -163,6 +161,14 @@ func promptForGenerateOptions() error {
 	// Cuisine
 	generateCuisine = prompt.Input(i18n.T(i18n.MsgGenerateCuisine)+": ", emptyCompleter)
 
+	// Servings
+	servingsStr := prompt.Input(i18n.T(i18n.MsgGenerateServings)+": ", emptyCompleter)
+	if servingsStr != "" {
+		if n, err := parseServings(servingsStr); err == nil {
+			generateServings = n
+		}
+	}
+
 	// Vegetarian
 	vegStr := prompt.Input(i18n.T(i18n.MsgGenerateVegetarian)+" ", emptyCompleter)
 	generateVegetarian = isYes(vegStr)
@@ -172,6 +178,19 @@ func promptForGenerateOptions() error {
 	generateQuick = isYes(quickStr)
 
 	return nil
+}
+
+func parseServings(s string) (int, error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return 0, nil
+	}
+	var n int
+	_, err := fmt.Sscanf(s, "%d", &n)
+	if err != nil || n < 1 {
+		return 0, fmt.Errorf("invalid servings")
+	}
+	return n, nil
 }
 
 func promptYesNo(question string) bool {
@@ -207,4 +226,5 @@ func resetGenerateFlags() {
 	generateCuisine = ""
 	generateVegetarian = false
 	generateQuick = false
+	generateServings = 0
 }

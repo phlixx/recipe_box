@@ -13,16 +13,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var viewServings int
+
 var recipeViewCmd = &cobra.Command{
-	Use:   "view <id>",
-	Short: "View a recipe",
-	Long:  `Display the full details of a recipe.`,
-	Args:  cobra.ExactArgs(1),
-	RunE:  runRecipeView,
+	Use:  "view <id>",
+	Args: cobra.ExactArgs(1),
+	RunE: runRecipeView,
 }
 
 func init() {
+	recipeViewCmd.Short = i18n.T(i18n.MsgCmdRecipeViewShort)
+	recipeViewCmd.Long = i18n.T(i18n.MsgCmdRecipeViewLong)
 	recipeCmd.AddCommand(recipeViewCmd)
+	recipeViewCmd.Flags().IntVarP(&viewServings, "servings", "s", 0, "Scale recipe to this number of servings")
 }
 
 func runRecipeView(cmd *cobra.Command, args []string) error {
@@ -42,11 +45,22 @@ func runRecipeView(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to get recipe: %w", err)
 	}
 
-	printRecipe(r)
+	// Scale if --servings flag is provided
+	originalServings := 0
+	if viewServings > 0 && viewServings != r.Servings {
+		originalServings = r.Servings
+		r = r.Scale(viewServings)
+	}
+
+	printRecipeWithScale(r, originalServings)
 	return nil
 }
 
 func printRecipe(r *recipe.Recipe) {
+	printRecipeWithScale(r, 0)
+}
+
+func printRecipeWithScale(r *recipe.Recipe, originalServings int) {
 	// Display ASCII art if available
 	if r.AsciiArt != "" {
 		fmt.Println()
@@ -64,7 +78,11 @@ func printRecipe(r *recipe.Recipe) {
 
 	// Metadata
 	ui.LabelPrintf("%s: ", i18n.T(i18n.MsgLabelServings))
-	fmt.Printf("%d\n", r.Servings)
+	if originalServings > 0 {
+		fmt.Printf("%d %s\n", r.Servings, fmt.Sprintf(i18n.T(i18n.MsgScaledFrom), originalServings))
+	} else {
+		fmt.Printf("%d\n", r.Servings)
+	}
 	if r.PrepTime > 0 {
 		ui.LabelPrintf("%s: ", i18n.T(i18n.MsgLabelPrepTime))
 		fmt.Printf("%d %s\n", r.PrepTime, i18n.T(i18n.MsgMinutes))
@@ -89,7 +107,7 @@ func printRecipe(r *recipe.Recipe) {
 	ui.SectionPrintf("%s:\n", i18n.T(i18n.MsgLabelIngredients))
 	for _, ing := range r.Ingredients {
 		if ing.Quantity > 0 && ing.Unit != "" {
-			fmt.Printf("  - %.4g %s %s\n", ing.Quantity, ing.Unit, ing.Name)
+			fmt.Printf("  - %.4g %s %s\n", ing.Quantity, i18n.Unit(ing.Unit), ing.Name)
 		} else if ing.Quantity > 0 {
 			fmt.Printf("  - %.4g %s\n", ing.Quantity, ing.Name)
 		} else {
