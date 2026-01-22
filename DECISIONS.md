@@ -320,6 +320,55 @@ Add **ASCII art** to AI-generated recipes:
 
 ---
 
+## ADR-013: Meal Plan Data Model
+
+**Date**: 2026-01-22
+**Status**: Accepted
+
+### Context
+Phase 2 introduces meal planning. Need to decide how to model plans, how users address days, how to handle leftovers, and where to store data.
+
+### Decision
+**Single active plan model**: Like the shopping list, only one meal plan is active at a time. Simpler UX, no need to manage multiple plans.
+
+**Day-based addressing**: Users specify days by name ("monday", "tuesday") which map to actual dates based on the plan's start date. More natural than date strings.
+
+**Leftover tracking**: Each `PlanEntry` has a `covers_days` field indicating how many days the meal covers. Display shows "← leftovers from Monday" on subsequent days.
+
+**Recipe references by ID**: Plan entries store `recipe_id`, not embedded recipe data. Recipes are fetched when displaying. Keeps plan lightweight, recipes stay in sync.
+
+**Storage**: `~/.recipe_box/meal_plan.json` (parallel to `recipes.json` and `shopping_list.json`).
+
+**Data model**:
+```go
+type MealPlan struct {
+    ID        string      `json:"id"`
+    StartDate string      `json:"start_date"` // ISO 8601
+    Days      int         `json:"days"`
+    Entries   []PlanEntry `json:"entries"`
+}
+
+type PlanEntry struct {
+    Date       string `json:"date"`       // ISO 8601
+    RecipeID   string `json:"recipe_id"`
+    Servings   int    `json:"servings"`
+    CoversDays int    `json:"covers_days"` // 1 = no leftovers
+}
+```
+
+### Consequences
+- **Pros**:
+  - Simple mental model (one plan at a time)
+  - Natural day addressing ("monday" vs "2026-01-27")
+  - Leftover tracking enables realistic meal prep
+  - Lightweight storage, recipes not duplicated
+- **Cons**:
+  - Can't compare multiple plan drafts
+  - Day names require plan context to resolve to dates
+  - Recipe deletion could orphan plan entries (need validation)
+
+---
+
 ## Template for New Decisions
 
 ```markdown

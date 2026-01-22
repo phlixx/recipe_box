@@ -157,20 +157,27 @@ ShoppingItem:
 
 ---
 
-## MVP Scope (v0.1)
+## Version History
 
-Focus on core loop first:
+### v0.1 - MVP ✅
 
 1. **Recipe generate** - AI generates recipe, display it
 2. **Recipe save/list/view** - Basic CRUD
-3. **Shopping generate** - From single recipe (no meal plan yet)
+3. **Shopping generate** - From single recipe
 4. **Language config** - EN/DE support
 
-### Out of Scope for MVP
-- Meal planning (week view)
-- Ingredient aggregation
-- Recipe editing
-- Categories/tags filtering
+### v0.2 - UX & Polish ✅
+
+1. **Interactive mode** - REPL with autocomplete, colors
+2. **Servings scaling** - Scale recipes up/down
+3. **Localization hardening** - Complete translations, units
+
+### v0.3 - Meal Planning (Current)
+
+1. **Plan foundation** - Create/show/clear meal plans
+2. **Plan management** - Add/remove recipes, leftover tracking
+3. **Shopping from plan** - Aggregate ingredients across plan
+4. **AI meal planning** - AI suggests balanced week
 
 ---
 
@@ -179,7 +186,9 @@ Focus on core loop first:
 1. **Storage location** → `~/.recipe_box/` (ADR-004)
 2. **API key management** → Config file (ADR-005)
 3. **Units** → Metric only for MVP (ADR-006)
+4. **Meal plan model** → Single active plan, day-based addressing, recipe references by ID (ADR-013)
 
 ## Open Questions
 
 1. **Offline mode** - Cache AI responses? Allow offline recipe management?
+2. **Recipe import** - Import from URL? (Future phase)
