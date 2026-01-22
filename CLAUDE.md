@@ -169,6 +169,7 @@ Before considering any task complete:
 - [ ] Smoke test if CLI behavior changed
 - [ ] STATUS.md updated
 - [ ] Completed tasks removed from TODO.md
+- [ ] README.md updated if user-facing features changed
 
 > **If `make check` doesn't pass, the work isn't done.**
 
