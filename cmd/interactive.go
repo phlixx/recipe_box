@@ -94,6 +94,8 @@ func completer(d prompt.Document) []prompt.Suggest {
 			return prompt.FilterHasPrefix(recipeSuggestions(), words[1], true)
 		case "shopping":
 			return prompt.FilterHasPrefix(shoppingSuggestions(), words[1], true)
+		case "plan":
+			return prompt.FilterHasPrefix(planSuggestions(), words[1], true)
 		case "config":
 			return prompt.FilterHasPrefix(configSuggestions(), words[1], true)
 		}
@@ -124,6 +126,7 @@ func topLevelSuggestions() []prompt.Suggest {
 	return []prompt.Suggest{
 		{Text: "recipe", Description: i18n.T(i18n.MsgCmdRecipeShort)},
 		{Text: "shopping", Description: i18n.T(i18n.MsgCmdShoppingShort)},
+		{Text: "plan", Description: i18n.T(i18n.MsgCmdPlanShort)},
 		{Text: "config", Description: i18n.T(i18n.MsgCmdConfigShort)},
 		{Text: "help", Description: i18n.T(i18n.MsgCmdHelpShort)},
 		{Text: "exit", Description: i18n.T(i18n.MsgCmdExitShort)},
@@ -146,6 +149,14 @@ func shoppingSuggestions() []prompt.Suggest {
 		{Text: "generate", Description: i18n.T(i18n.MsgCmdShoppingGenerateShort)},
 		{Text: "show", Description: i18n.T(i18n.MsgCmdShoppingShowShort)},
 		{Text: "clear", Description: i18n.T(i18n.MsgCmdShoppingClearShort)},
+	}
+}
+
+func planSuggestions() []prompt.Suggest {
+	return []prompt.Suggest{
+		{Text: "create", Description: i18n.T(i18n.MsgCmdPlanCreateShort)},
+		{Text: "show", Description: i18n.T(i18n.MsgCmdPlanShowShort)},
+		{Text: "clear", Description: i18n.T(i18n.MsgCmdPlanClearShort)},
 	}
 }
 
@@ -203,6 +214,12 @@ func printHelp() {
 	fmt.Printf("  generate <id>     %s\n", i18n.T(i18n.MsgCmdShoppingGenerateShort))
 	fmt.Printf("  show              %s\n", i18n.T(i18n.MsgCmdShoppingShowShort))
 	fmt.Printf("  clear             %s\n", i18n.T(i18n.MsgCmdShoppingClearShort))
+
+	fmt.Println()
+	ui.SectionPrintf("plan\n")
+	fmt.Printf("  create            %s\n", i18n.T(i18n.MsgCmdPlanCreateShort))
+	fmt.Printf("  show              %s\n", i18n.T(i18n.MsgCmdPlanShowShort))
+	fmt.Printf("  clear             %s\n", i18n.T(i18n.MsgCmdPlanClearShort))
 
 	fmt.Println()
 	ui.SectionPrintf("config\n")

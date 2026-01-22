@@ -318,12 +318,12 @@ Iter 12: AI Meal Planning   → AI suggests balanced week
 **Goal**: Basic infrastructure and view commands
 
 **Deliverables**:
-- [ ] Data model (`internal/plan/plan.go`)
-- [ ] Service layer (`internal/plan/service.go`)
-- [ ] `plan create [--days N]` - Create empty plan (default 7 days)
-- [ ] `plan show` - Display current plan
-- [ ] `plan clear` - Clear the plan
-- [ ] i18n keys for all new strings
+- [x] Data model (`internal/plan/plan.go`)
+- [x] Service layer (`internal/plan/service.go`)
+- [x] `plan create [--days N]` - Create empty plan (default 7 days)
+- [x] `plan show` - Display current plan
+- [x] `plan clear` - Clear the plan
+- [x] i18n keys for all new strings
 
 **Data Model**:
 ```go
@@ -448,7 +448,7 @@ recipe_box plan generate --days 7 --vegetarian
 
 | Iter | Focus | Key Commands | Status |
 |------|-------|--------------|--------|
-| 9 | Plan Foundation | `plan create/show/clear` | Pending |
+| 9 | Plan Foundation | `plan create/show/clear` | Done |
 | 10 | Plan Management | `plan add/remove` | Pending |
 | 11 | Shopping from Plan | `shopping generate --plan` | Pending |
 | 12 | AI Meal Planning | `plan generate` | Pending |

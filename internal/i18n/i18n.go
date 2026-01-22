@@ -131,6 +131,28 @@ const (
 	MsgCmdConfigGetShort = "cmd.config.get.short"
 	MsgCmdConfigSetShort = "cmd.config.set.short"
 
+	// Plan command descriptions
+	MsgCmdPlanShort       = "cmd.plan.short"
+	MsgCmdPlanLong        = "cmd.plan.long"
+	MsgCmdPlanCreateShort = "cmd.plan.create.short"
+	MsgCmdPlanCreateLong  = "cmd.plan.create.long"
+	MsgCmdPlanShowShort   = "cmd.plan.show.short"
+	MsgCmdPlanShowLong    = "cmd.plan.show.long"
+	MsgCmdPlanClearShort  = "cmd.plan.clear.short"
+	MsgCmdPlanClearLong   = "cmd.plan.clear.long"
+
+	// Plan messages
+	MsgPlanCreated    = "plan.created"
+	MsgPlanCleared    = "plan.cleared"
+	MsgPlanEmpty      = "plan.empty"
+	MsgPlanEmptyHint  = "plan.empty_hint"
+	MsgPlanNoPlan     = "plan.no_plan"
+	MsgPlanNoPlanHint = "plan.no_plan_hint"
+	MsgPlanHeader     = "plan.header"
+	MsgPlanLeftovers  = "plan.leftovers"
+	MsgPlanEmptyDay   = "plan.empty_day"
+	MsgPlanDayFormat  = "plan.day_format"
+
 	// Config key descriptions
 	MsgConfigKeyAPIKey   = "config.key.api_key"
 	MsgConfigKeyLanguage = "config.key.language"

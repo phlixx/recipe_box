@@ -126,6 +126,28 @@ var messagesEN = map[string]string{
 	MsgCmdConfigGetShort: "Get a configuration value",
 	MsgCmdConfigSetShort: "Set a configuration value",
 
+	// Plan command descriptions
+	MsgCmdPlanShort:       "Manage meal plans",
+	MsgCmdPlanLong:        "Create, view, and manage your weekly meal plans.",
+	MsgCmdPlanCreateShort: "Create a new meal plan",
+	MsgCmdPlanCreateLong:  "Create a new meal plan starting from today.\n\nExamples:\n  recipe_box plan create\n  recipe_box plan create --days 5",
+	MsgCmdPlanShowShort:   "Show current meal plan",
+	MsgCmdPlanShowLong:    "Display the current meal plan with all scheduled meals.",
+	MsgCmdPlanClearShort:  "Clear the meal plan",
+	MsgCmdPlanClearLong:   "Remove the current meal plan.",
+
+	// Plan messages
+	MsgPlanCreated:    "Meal plan created for %d days (starting %s)",
+	MsgPlanCleared:    "Meal plan cleared.",
+	MsgPlanEmpty:      "Meal plan is empty.",
+	MsgPlanEmptyHint:  "Use 'plan add <day> <recipe-id>' to add meals.",
+	MsgPlanNoPlan:     "No meal plan found.",
+	MsgPlanNoPlanHint: "Use 'plan create' to start a new meal plan.",
+	MsgPlanHeader:     "Meal Plan (%d days)",
+	MsgPlanLeftovers:  "leftovers from %s",
+	MsgPlanEmptyDay:   "(empty)",
+	MsgPlanDayFormat:  "%s (%s)",
+
 	// Config key descriptions
 	MsgConfigKeyAPIKey:   "Claude API key",
 	MsgConfigKeyLanguage: "Language (en/de)",

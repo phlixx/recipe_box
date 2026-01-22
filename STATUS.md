@@ -2,7 +2,7 @@
 
 ## Current Focus
 
-**Phase 2: Meal Planning** - Starting Iteration 9
+**Phase 2: Meal Planning** - Iteration 9 Complete, Ready for Iteration 10
 
 ## Blockers
 
@@ -11,27 +11,28 @@ None.
 ## Handoff Notes
 
 **Last session (2026-01-22)**:
-- Filled testing gaps before starting Phase 2
-- Added HTTP mock server infrastructure for Claude API testing
-- Added E2E tests: `recipe generate` (4 tests), `--servings` flag (2 tests), interactive `recipe add`
-- Modified `internal/ai/claude.go` to allow API URL override via `ANTHROPIC_API_URL` env var
-- Planned Phase 2: Meal Planning (Iterations 9-12)
-- Updated ITERATIONS.md with detailed iteration specs
+- Completed Iteration 9: Meal Plan Foundation
+- Created `internal/plan/plan.go` with MealPlan and PlanEntry types
+- Created `internal/plan/service.go` with Create/Get/Clear/Save methods
+- Added comprehensive unit tests (12 tests passing)
+- Created CLI commands: `plan create`, `plan show`, `plan clear`
+- Added i18n support for all new strings (EN + DE)
+- Added tab completion for plan commands in interactive mode
+- All checks pass (`make check`, `make build`, `make smoke`)
 
-**Phase 2 Overview**:
-- Iteration 9: Plan Foundation (data model, create/show/clear commands)
-- Iteration 10: Plan Management (add/remove recipes, leftover tracking)
-- Iteration 11: Shopping from Plan (aggregate ingredients)
-- Iteration 12: AI Meal Planning (AI suggests balanced week)
+**Iteration 9 Features Delivered**:
+- `plan create [--days N]` - Creates new meal plan starting from today (default 7 days)
+- `plan show` - Displays current meal plan with calendar view
+- `plan clear` - Removes the meal plan
+- Plan data model with leftover tracking support (`covers_days` field)
 
-**Key design decisions**:
-- Single active plan (like shopping list)
-- Day-based addressing ("monday", "tuesday" → dates)
-- Leftover tracking via `covers_days` field
-- Recipe references by ID (not embedded)
-- Storage: `~/.recipe_box/meal_plan.json`
+**Next: Iteration 10** (Plan Management):
+- `plan add <day> <recipe-id> [--servings N] [--days N]`
+- `plan remove <day>`
+- Day name support ("monday" -> date mapping)
+- Leftover visualization in `plan show`
 
 **Previous sessions**:
 - Completed MVP (v0.1): Iterations 1-5
 - Completed Phase 1 UX & Polish (v0.2): Iterations 6-8
-- Created comprehensive README.md
+- Planned Phase 2: Meal Planning (Iterations 9-12)

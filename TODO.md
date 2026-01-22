@@ -2,17 +2,16 @@
 
 See `ITERATIONS.md` for full iteration plan.
 
-## Current: Iteration 9 - Meal Plan Foundation
+## Next: Iteration 10 - Meal Plan Management
 
-- [ ] Create `internal/plan/plan.go` (MealPlan, PlanEntry types)
-- [ ] Create `internal/plan/service.go` (Service with CRUD methods)
-- [ ] Create `internal/plan/service_test.go` (unit tests)
-- [ ] Create `cmd/plan.go` (command group)
-- [ ] Create `cmd/plan_create.go` (`plan create [--days N]`)
-- [ ] Create `cmd/plan_show.go` (`plan show`)
-- [ ] Create `cmd/plan_clear.go` (`plan clear`)
-- [ ] Add i18n keys for all new strings (EN + DE)
-- [ ] Update `cmd/interactive.go` (tab completion for plan commands)
+- [ ] Create `cmd/plan_add.go` (`plan add <day> <recipe-id> [--servings N] [--days N]`)
+- [ ] Create `cmd/plan_remove.go` (`plan remove <day>`)
+- [ ] Add day name parsing ("monday", "tuesday" -> dates in current plan)
+- [ ] Update `plan show` to display leftover visualization
+- [ ] Add `AddEntry` and `RemoveEntry` methods to plan service
+- [ ] Add tab completion for day names in interactive mode
+- [ ] Add tab completion for recipe IDs for `plan add` command
+- [ ] Add i18n keys for new strings (EN + DE)
 
 ## Testing Notes
 
