@@ -95,7 +95,7 @@ func displayPlanEntry(recipeSvc *recipe.Service, entry *plan.PlanEntry) {
 
 	coversInfo := ""
 	if entry.CoversDays > 1 {
-		coversInfo = fmt.Sprintf(", covers %d days", entry.CoversDays)
+		coversInfo = fmt.Sprintf(", %s", fmt.Sprintf(i18n.T(i18n.MsgPlanCoversDays), entry.CoversDays))
 	}
 
 	fmt.Printf("  %s%s%s\n", r.Title, servingsInfo, coversInfo)

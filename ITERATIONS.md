@@ -367,11 +367,11 @@ recipe_box plan clear
 **Goal**: Add/remove recipes to plan entries
 
 **Deliverables**:
-- [ ] `plan add <day> <recipe-id> [--servings N] [--days N]` - Assign recipe to day
-- [ ] `plan remove <day>` - Remove entry from day
-- [ ] Day name support: "monday", "tuesday", etc. (maps to date in plan)
-- [ ] Leftover visualization in `plan show`
-- [ ] Tab completion for day names + recipe IDs
+- [x] `plan add <day> <recipe-id> [--servings N] [--days N]` - Assign recipe to day
+- [x] `plan remove <day>` - Remove entry from day
+- [x] Day name support: "monday", "tuesday", etc. (maps to date in plan)
+- [x] Leftover visualization in `plan show`
+- [x] Tab completion for day names + recipe IDs
 
 **Exit Criteria**:
 ```bash
@@ -449,7 +449,7 @@ recipe_box plan generate --days 7 --vegetarian
 | Iter | Focus | Key Commands | Status |
 |------|-------|--------------|--------|
 | 9 | Plan Foundation | `plan create/show/clear` | Done |
-| 10 | Plan Management | `plan add/remove` | Pending |
+| 10 | Plan Management | `plan add/remove` | Done |
 | 11 | Shopping from Plan | `shopping generate --plan` | Pending |
 | 12 | AI Meal Planning | `plan generate` | Pending |
 

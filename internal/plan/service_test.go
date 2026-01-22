@@ -307,3 +307,346 @@ func TestService_Save(t *testing.T) {
 		t.Errorf("expected 1 entry, got %d", len(loaded.Entries))
 	}
 }
+
+func TestService_AddEntry(t *testing.T) {
+	store := setupTestStorage(t)
+	svc := NewService(store)
+
+	// Create a plan with a specific start date
+	plan := &MealPlan{
+		ID:        "test123",
+		StartDate: "2024-01-15",
+		Days:      7,
+		Entries:   []PlanEntry{},
+	}
+	if err := svc.Save(plan); err != nil {
+		t.Fatalf("Save failed: %v", err)
+	}
+
+	// Add an entry
+	err := svc.AddEntry("2024-01-16", "recipe1", 4, 2)
+	if err != nil {
+		t.Fatalf("AddEntry failed: %v", err)
+	}
+
+	// Verify entry was added
+	loaded, err := svc.Get()
+	if err != nil {
+		t.Fatalf("Get failed: %v", err)
+	}
+
+	if len(loaded.Entries) != 1 {
+		t.Fatalf("expected 1 entry, got %d", len(loaded.Entries))
+	}
+
+	entry := loaded.Entries[0]
+	if entry.Date != "2024-01-16" {
+		t.Errorf("expected date 2024-01-16, got %s", entry.Date)
+	}
+	if entry.RecipeID != "recipe1" {
+		t.Errorf("expected recipe1, got %s", entry.RecipeID)
+	}
+	if entry.Servings != 4 {
+		t.Errorf("expected 4 servings, got %d", entry.Servings)
+	}
+	if entry.CoversDays != 2 {
+		t.Errorf("expected 2 covers_days, got %d", entry.CoversDays)
+	}
+}
+
+func TestService_AddEntry_ReplaceExisting(t *testing.T) {
+	store := setupTestStorage(t)
+	svc := NewService(store)
+
+	// Create a plan with an existing entry
+	plan := &MealPlan{
+		ID:        "test123",
+		StartDate: "2024-01-15",
+		Days:      7,
+		Entries: []PlanEntry{
+			{Date: "2024-01-16", RecipeID: "recipe1", Servings: 2, CoversDays: 1},
+		},
+	}
+	if err := svc.Save(plan); err != nil {
+		t.Fatalf("Save failed: %v", err)
+	}
+
+	// Replace the entry
+	err := svc.AddEntry("2024-01-16", "recipe2", 6, 3)
+	if err != nil {
+		t.Fatalf("AddEntry failed: %v", err)
+	}
+
+	// Verify entry was replaced
+	loaded, err := svc.Get()
+	if err != nil {
+		t.Fatalf("Get failed: %v", err)
+	}
+
+	if len(loaded.Entries) != 1 {
+		t.Fatalf("expected 1 entry (replaced), got %d", len(loaded.Entries))
+	}
+
+	entry := loaded.Entries[0]
+	if entry.RecipeID != "recipe2" {
+		t.Errorf("expected recipe2 (replaced), got %s", entry.RecipeID)
+	}
+	if entry.Servings != 6 {
+		t.Errorf("expected 6 servings (replaced), got %d", entry.Servings)
+	}
+}
+
+func TestService_AddEntry_NoPlan(t *testing.T) {
+	store := setupTestStorage(t)
+	svc := NewService(store)
+
+	err := svc.AddEntry("2024-01-15", "recipe1", 4, 1)
+	if err != ErrNoPlan {
+		t.Errorf("expected ErrNoPlan, got %v", err)
+	}
+}
+
+func TestService_AddEntry_DateNotInPlan(t *testing.T) {
+	store := setupTestStorage(t)
+	svc := NewService(store)
+
+	// Create a plan
+	plan := &MealPlan{
+		ID:        "test123",
+		StartDate: "2024-01-15",
+		Days:      3,
+		Entries:   []PlanEntry{},
+	}
+	if err := svc.Save(plan); err != nil {
+		t.Fatalf("Save failed: %v", err)
+	}
+
+	// Try to add entry outside plan range
+	err := svc.AddEntry("2024-01-25", "recipe1", 4, 1)
+	if err != ErrDateNotInPlan {
+		t.Errorf("expected ErrDateNotInPlan, got %v", err)
+	}
+}
+
+func TestService_RemoveEntry(t *testing.T) {
+	store := setupTestStorage(t)
+	svc := NewService(store)
+
+	// Create a plan with an entry
+	plan := &MealPlan{
+		ID:        "test123",
+		StartDate: "2024-01-15",
+		Days:      7,
+		Entries: []PlanEntry{
+			{Date: "2024-01-16", RecipeID: "recipe1", Servings: 4, CoversDays: 1},
+		},
+	}
+	if err := svc.Save(plan); err != nil {
+		t.Fatalf("Save failed: %v", err)
+	}
+
+	// Remove the entry
+	removed, err := svc.RemoveEntry("2024-01-16")
+	if err != nil {
+		t.Fatalf("RemoveEntry failed: %v", err)
+	}
+	if !removed {
+		t.Error("expected entry to be removed")
+	}
+
+	// Verify entry was removed
+	loaded, err := svc.Get()
+	if err != nil {
+		t.Fatalf("Get failed: %v", err)
+	}
+
+	if len(loaded.Entries) != 0 {
+		t.Errorf("expected 0 entries, got %d", len(loaded.Entries))
+	}
+}
+
+func TestService_RemoveEntry_NotFound(t *testing.T) {
+	store := setupTestStorage(t)
+	svc := NewService(store)
+
+	// Create a plan without the target entry
+	plan := &MealPlan{
+		ID:        "test123",
+		StartDate: "2024-01-15",
+		Days:      7,
+		Entries:   []PlanEntry{},
+	}
+	if err := svc.Save(plan); err != nil {
+		t.Fatalf("Save failed: %v", err)
+	}
+
+	// Try to remove non-existent entry
+	removed, err := svc.RemoveEntry("2024-01-16")
+	if err != nil {
+		t.Fatalf("RemoveEntry failed: %v", err)
+	}
+	if removed {
+		t.Error("expected entry not to be found")
+	}
+}
+
+func TestMealPlan_ParseDayToDate(t *testing.T) {
+	// Create a plan starting on Monday 2024-01-15
+	plan := &MealPlan{
+		StartDate: "2024-01-15", // Monday
+		Days:      7,
+	}
+
+	tests := []struct {
+		input    string
+		expected string
+		ok       bool
+	}{
+		// English day names
+		{"monday", "2024-01-15", true},
+		{"tuesday", "2024-01-16", true},
+		{"wednesday", "2024-01-17", true},
+		{"thursday", "2024-01-18", true},
+		{"friday", "2024-01-19", true},
+		{"saturday", "2024-01-20", true},
+		{"sunday", "2024-01-21", true},
+		// Short day names
+		{"mon", "2024-01-15", true},
+		{"tue", "2024-01-16", true},
+		// German day names
+		{"montag", "2024-01-15", true},
+		{"dienstag", "2024-01-16", true},
+		// ISO date
+		{"2024-01-16", "2024-01-16", true},
+		// Case insensitive
+		{"MONDAY", "2024-01-15", true},
+		{"Monday", "2024-01-15", true},
+		// Invalid
+		{"invalid", "", false},
+		{"2024-01-25", "", false}, // outside plan range
+	}
+
+	for _, tc := range tests {
+		date, ok := plan.ParseDayToDate(tc.input)
+		if ok != tc.ok {
+			t.Errorf("ParseDayToDate(%q): expected ok=%v, got %v", tc.input, tc.ok, ok)
+		}
+		if date != tc.expected {
+			t.Errorf("ParseDayToDate(%q): expected %q, got %q", tc.input, tc.expected, date)
+		}
+	}
+}
+
+func TestMealPlan_AddEntry(t *testing.T) {
+	plan := &MealPlan{
+		StartDate: "2024-01-15",
+		Days:      7,
+		Entries:   []PlanEntry{},
+	}
+
+	entry := PlanEntry{
+		Date:       "2024-01-16",
+		RecipeID:   "recipe1",
+		Servings:   4,
+		CoversDays: 2,
+	}
+
+	plan.AddEntry(entry)
+
+	if len(plan.Entries) != 1 {
+		t.Fatalf("expected 1 entry, got %d", len(plan.Entries))
+	}
+
+	if plan.Entries[0].RecipeID != "recipe1" {
+		t.Errorf("expected recipe1, got %s", plan.Entries[0].RecipeID)
+	}
+}
+
+func TestMealPlan_AddEntry_ReplaceExisting(t *testing.T) {
+	plan := &MealPlan{
+		StartDate: "2024-01-15",
+		Days:      7,
+		Entries: []PlanEntry{
+			{Date: "2024-01-16", RecipeID: "recipe1", Servings: 2, CoversDays: 1},
+		},
+	}
+
+	entry := PlanEntry{
+		Date:       "2024-01-16",
+		RecipeID:   "recipe2",
+		Servings:   6,
+		CoversDays: 3,
+	}
+
+	plan.AddEntry(entry)
+
+	if len(plan.Entries) != 1 {
+		t.Fatalf("expected 1 entry (replaced), got %d", len(plan.Entries))
+	}
+
+	if plan.Entries[0].RecipeID != "recipe2" {
+		t.Errorf("expected recipe2 (replaced), got %s", plan.Entries[0].RecipeID)
+	}
+}
+
+func TestMealPlan_RemoveEntry(t *testing.T) {
+	plan := &MealPlan{
+		StartDate: "2024-01-15",
+		Days:      7,
+		Entries: []PlanEntry{
+			{Date: "2024-01-16", RecipeID: "recipe1", Servings: 4, CoversDays: 1},
+			{Date: "2024-01-17", RecipeID: "recipe2", Servings: 2, CoversDays: 1},
+		},
+	}
+
+	removed := plan.RemoveEntry("2024-01-16")
+	if !removed {
+		t.Error("expected entry to be removed")
+	}
+
+	if len(plan.Entries) != 1 {
+		t.Fatalf("expected 1 entry remaining, got %d", len(plan.Entries))
+	}
+
+	if plan.Entries[0].RecipeID != "recipe2" {
+		t.Errorf("expected recipe2 to remain, got %s", plan.Entries[0].RecipeID)
+	}
+}
+
+func TestMealPlan_RemoveEntry_NotFound(t *testing.T) {
+	plan := &MealPlan{
+		StartDate: "2024-01-15",
+		Days:      7,
+		Entries:   []PlanEntry{},
+	}
+
+	removed := plan.RemoveEntry("2024-01-16")
+	if removed {
+		t.Error("expected entry not to be found")
+	}
+}
+
+func TestMealPlan_IsDateInPlan(t *testing.T) {
+	plan := &MealPlan{
+		StartDate: "2024-01-15",
+		Days:      3,
+	}
+
+	tests := []struct {
+		date     string
+		expected bool
+	}{
+		{"2024-01-15", true},
+		{"2024-01-16", true},
+		{"2024-01-17", true},
+		{"2024-01-14", false},
+		{"2024-01-18", false},
+	}
+
+	for _, tc := range tests {
+		result := plan.IsDateInPlan(tc.date)
+		if result != tc.expected {
+			t.Errorf("IsDateInPlan(%q): expected %v, got %v", tc.date, tc.expected, result)
+		}
+	}
+}

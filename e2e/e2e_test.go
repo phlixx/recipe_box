@@ -1448,3 +1448,596 @@ func TestInteractive_RecipeAdd(t *testing.T) {
 		t.Errorf("expected recipe in list, got: %s", output)
 	}
 }
+
+// =============================================================================
+// Meal Plan Tests
+// =============================================================================
+
+func TestPlan_CreateAndShow(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a plan
+	stdout, _, err := runCmd(t, home, "plan", "create", "--days", "5")
+	if err != nil {
+		t.Fatalf("plan create failed: %v", err)
+	}
+	if !strings.Contains(stdout, "5") {
+		t.Errorf("expected '5 days' in output, got: %s", stdout)
+	}
+
+	// Show the plan
+	stdout, _, err = runCmd(t, home, "plan", "show")
+	if err != nil {
+		t.Fatalf("plan show failed: %v", err)
+	}
+	// Should show 5 days with day names
+	if !strings.Contains(stdout, "day") && !strings.Contains(stdout, "Day") && !strings.Contains(stdout, "Tage") {
+		t.Errorf("expected days in output, got: %s", stdout)
+	}
+}
+
+func TestPlan_ShowNoPlan(t *testing.T) {
+	home := setupTestHome(t)
+
+	stdout, _, err := runCmd(t, home, "plan", "show")
+	if err != nil {
+		t.Fatalf("plan show failed: %v", err)
+	}
+	if !strings.Contains(stdout, "No meal plan") && !strings.Contains(stdout, "Kein Essensplan") {
+		t.Errorf("expected 'no plan' message, got: %s", stdout)
+	}
+}
+
+func TestPlan_Clear(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a plan first
+	_, _, err := runCmd(t, home, "plan", "create")
+	if err != nil {
+		t.Fatalf("plan create failed: %v", err)
+	}
+
+	// Clear the plan
+	stdout, _, err := runCmd(t, home, "plan", "clear")
+	if err != nil {
+		t.Fatalf("plan clear failed: %v", err)
+	}
+	if !strings.Contains(stdout, "cleared") && !strings.Contains(stdout, "gelöscht") {
+		t.Errorf("expected 'cleared' message, got: %s", stdout)
+	}
+
+	// Verify it's gone
+	stdout, _, err = runCmd(t, home, "plan", "show")
+	if err != nil {
+		t.Fatalf("plan show failed: %v", err)
+	}
+	if !strings.Contains(stdout, "No meal plan") && !strings.Contains(stdout, "Kein Essensplan") {
+		t.Errorf("expected 'no plan' message after clear, got: %s", stdout)
+	}
+}
+
+func TestPlan_AddRecipe(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a recipe first
+	recipe := map[string]interface{}{
+		"id":       "plan-recipe-1",
+		"title":    "Test Meal",
+		"servings": 4,
+		"ingredients": []map[string]interface{}{
+			{"name": "chicken", "quantity": 500, "unit": "g", "category": "meat"},
+		},
+		"steps":    []string{"Cook chicken"},
+		"source":   "manual",
+		"language": "en",
+	}
+	recipes := []interface{}{recipe}
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	if err := os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644); err != nil {
+		t.Fatalf("failed to write recipe: %v", err)
+	}
+
+	// Create a plan
+	_, _, err := runCmd(t, home, "plan", "create", "--days", "7")
+	if err != nil {
+		t.Fatalf("plan create failed: %v", err)
+	}
+
+	// Add recipe to monday
+	stdout, _, err := runCmd(t, home, "plan", "add", "monday", "plan-recipe-1")
+	if err != nil {
+		t.Fatalf("plan add failed: %v", err)
+	}
+	if !strings.Contains(stdout, "Test Meal") && !strings.Contains(stdout, "Added") && !strings.Contains(stdout, "hinzugefügt") {
+		t.Errorf("expected success message with recipe title, got: %s", stdout)
+	}
+
+	// Verify it shows in plan
+	stdout, _, err = runCmd(t, home, "plan", "show")
+	if err != nil {
+		t.Fatalf("plan show failed: %v", err)
+	}
+	if !strings.Contains(stdout, "Test Meal") {
+		t.Errorf("expected recipe in plan show, got: %s", stdout)
+	}
+}
+
+func TestPlan_AddRecipeWithServings(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a recipe
+	recipe := map[string]interface{}{
+		"id":       "plan-recipe-2",
+		"title":    "Scalable Dish",
+		"servings": 2,
+		"ingredients": []map[string]interface{}{
+			{"name": "pasta", "quantity": 200, "unit": "g", "category": "pantry"},
+		},
+		"steps":    []string{"Cook"},
+		"source":   "manual",
+		"language": "en",
+	}
+	recipes := []interface{}{recipe}
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644)
+
+	// Create a plan
+	runCmd(t, home, "plan", "create", "--days", "7")
+
+	// Add recipe with custom servings
+	stdout, _, err := runCmd(t, home, "plan", "add", "tuesday", "plan-recipe-2", "--servings", "6")
+	if err != nil {
+		t.Fatalf("plan add with servings failed: %v", err)
+	}
+	if !strings.Contains(stdout, "Scalable Dish") {
+		t.Errorf("expected recipe name in output, got: %s", stdout)
+	}
+
+	// Verify servings show in plan
+	stdout, _, _ = runCmd(t, home, "plan", "show")
+	if !strings.Contains(stdout, "6") {
+		t.Errorf("expected '6 servings' in plan show, got: %s", stdout)
+	}
+}
+
+func TestPlan_AddRecipeWithDays(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a recipe
+	recipe := map[string]interface{}{
+		"id":       "plan-recipe-3",
+		"title":    "Leftover Meal",
+		"servings": 6,
+		"ingredients": []map[string]interface{}{
+			{"name": "rice", "quantity": 500, "unit": "g", "category": "pantry"},
+		},
+		"steps":    []string{"Cook rice"},
+		"source":   "manual",
+		"language": "en",
+	}
+	recipes := []interface{}{recipe}
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644)
+
+	// Create a plan
+	runCmd(t, home, "plan", "create", "--days", "7")
+
+	// Add recipe that covers 3 days
+	stdout, _, err := runCmd(t, home, "plan", "add", "wednesday", "plan-recipe-3", "--days", "3")
+	if err != nil {
+		t.Fatalf("plan add with days failed: %v", err)
+	}
+	if !strings.Contains(stdout, "Leftover Meal") {
+		t.Errorf("expected recipe name in output, got: %s", stdout)
+	}
+
+	// Verify leftover indicators show in plan
+	stdout, _, _ = runCmd(t, home, "plan", "show")
+	// Should show "covers 3 days" or leftover indicators
+	if !strings.Contains(stdout, "3") && !strings.Contains(stdout, "leftover") && !strings.Contains(stdout, "Reste") {
+		t.Errorf("expected leftover/covers days info in plan show, got: %s", stdout)
+	}
+}
+
+func TestPlan_RemoveRecipe(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a recipe
+	recipe := map[string]interface{}{
+		"id":       "plan-recipe-4",
+		"title":    "To Be Removed",
+		"servings": 2,
+		"ingredients": []map[string]interface{}{
+			{"name": "salad", "quantity": 200, "unit": "g", "category": "produce"},
+		},
+		"steps":    []string{"Mix"},
+		"source":   "manual",
+		"language": "en",
+	}
+	recipes := []interface{}{recipe}
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644)
+
+	// Create a plan and add recipe
+	runCmd(t, home, "plan", "create", "--days", "7")
+	runCmd(t, home, "plan", "add", "friday", "plan-recipe-4")
+
+	// Verify it's there
+	stdout, _, _ := runCmd(t, home, "plan", "show")
+	if !strings.Contains(stdout, "To Be Removed") {
+		t.Fatalf("recipe should be in plan before removal, got: %s", stdout)
+	}
+
+	// Remove it
+	stdout, _, err := runCmd(t, home, "plan", "remove", "friday")
+	if err != nil {
+		t.Fatalf("plan remove failed: %v", err)
+	}
+	if !strings.Contains(stdout, "Removed") && !strings.Contains(stdout, "entfernt") {
+		t.Errorf("expected 'removed' confirmation, got: %s", stdout)
+	}
+
+	// Verify it's gone
+	stdout, _, _ = runCmd(t, home, "plan", "show")
+	if strings.Contains(stdout, "To Be Removed") {
+		t.Errorf("recipe should not be in plan after removal, got: %s", stdout)
+	}
+}
+
+func TestPlan_AddWithGermanDayName(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a recipe
+	recipe := map[string]interface{}{
+		"id":       "german-plan-recipe",
+		"title":    "German Day Test",
+		"servings": 4,
+		"ingredients": []map[string]interface{}{
+			{"name": "wurst", "quantity": 200, "unit": "g", "category": "meat"},
+		},
+		"steps":    []string{"Grill"},
+		"source":   "manual",
+		"language": "de",
+	}
+	recipes := []interface{}{recipe}
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644)
+
+	// Create a plan
+	runCmd(t, home, "plan", "create", "--days", "7")
+
+	// Add recipe using German day name
+	stdout, _, err := runCmd(t, home, "plan", "add", "montag", "german-plan-recipe")
+	if err != nil {
+		t.Fatalf("plan add with German day name failed: %v", err)
+	}
+	if !strings.Contains(stdout, "German Day Test") {
+		t.Errorf("expected recipe name in output, got: %s", stdout)
+	}
+
+	// Verify it shows in plan
+	stdout, _, _ = runCmd(t, home, "plan", "show")
+	if !strings.Contains(stdout, "German Day Test") {
+		t.Errorf("expected recipe in plan after adding with German day name, got: %s", stdout)
+	}
+}
+
+func TestPlan_AddWithShortDayName(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a recipe
+	recipe := map[string]interface{}{
+		"id":       "short-day-recipe",
+		"title":    "Short Day Test",
+		"servings": 2,
+		"ingredients": []map[string]interface{}{
+			{"name": "bread", "quantity": 2, "unit": "slices", "category": "pantry"},
+		},
+		"steps":    []string{"Toast"},
+		"source":   "manual",
+		"language": "en",
+	}
+	recipes := []interface{}{recipe}
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644)
+
+	// Create a plan
+	runCmd(t, home, "plan", "create", "--days", "7")
+
+	// Add recipe using short day name
+	stdout, _, err := runCmd(t, home, "plan", "add", "tue", "short-day-recipe")
+	if err != nil {
+		t.Fatalf("plan add with short day name failed: %v", err)
+	}
+	if !strings.Contains(stdout, "Short Day Test") {
+		t.Errorf("expected recipe name in output, got: %s", stdout)
+	}
+}
+
+func TestPlan_AddWithISODate(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a recipe
+	recipe := map[string]interface{}{
+		"id":       "iso-date-recipe",
+		"title":    "ISO Date Test",
+		"servings": 2,
+		"ingredients": []map[string]interface{}{
+			{"name": "beans", "quantity": 400, "unit": "g", "category": "pantry"},
+		},
+		"steps":    []string{"Heat"},
+		"source":   "manual",
+		"language": "en",
+	}
+	recipes := []interface{}{recipe}
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644)
+
+	// Create a plan and get the start date from show output
+	runCmd(t, home, "plan", "create", "--days", "7")
+	stdout, _, _ := runCmd(t, home, "plan", "show")
+
+	// Extract a date from the output (format: YYYY-MM-DD)
+	// The plan show displays dates like "Monday (2024-01-15)"
+	dateStart := strings.Index(stdout, "20") // Look for year starting with 20
+	if dateStart == -1 {
+		t.Skip("Could not extract date from plan show output")
+	}
+	// Extract 10 characters for YYYY-MM-DD
+	if dateStart+10 > len(stdout) {
+		t.Skip("Could not extract full date from plan show output")
+	}
+	isoDate := stdout[dateStart : dateStart+10]
+
+	// Add recipe using ISO date
+	stdout, stderr, err := runCmd(t, home, "plan", "add", isoDate, "iso-date-recipe")
+	if err != nil {
+		t.Fatalf("plan add with ISO date failed: %v\nstderr: %s", err, stderr)
+	}
+	if !strings.Contains(stdout, "ISO Date Test") {
+		t.Errorf("expected recipe name in output, got: %s", stdout)
+	}
+}
+
+func TestPlan_AddNoPlan(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a recipe
+	recipe := map[string]interface{}{
+		"id":       "no-plan-recipe",
+		"title":    "No Plan Test",
+		"servings": 2,
+		"ingredients": []map[string]interface{}{
+			{"name": "egg", "quantity": 1, "unit": "pcs", "category": "dairy"},
+		},
+		"steps":    []string{"Boil"},
+		"source":   "manual",
+		"language": "en",
+	}
+	recipes := []interface{}{recipe}
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644)
+
+	// Try to add without creating a plan first
+	stdout, _, err := runCmd(t, home, "plan", "add", "monday", "no-plan-recipe")
+	if err != nil {
+		// Error is expected
+	}
+	if !strings.Contains(stdout, "No meal plan") && !strings.Contains(stdout, "Kein Essensplan") {
+		t.Errorf("expected 'no plan' message, got: %s", stdout)
+	}
+}
+
+func TestPlan_AddRecipeNotFound(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a plan but no recipe
+	runCmd(t, home, "plan", "create", "--days", "7")
+
+	// Try to add non-existent recipe
+	_, stderr, err := runCmd(t, home, "plan", "add", "monday", "nonexistent-recipe")
+	if err == nil {
+		t.Error("expected error for non-existent recipe")
+	}
+	if !strings.Contains(stderr, "not found") && !strings.Contains(stderr, "nicht gefunden") {
+		t.Errorf("expected 'not found' error, got: %s", stderr)
+	}
+}
+
+func TestPlan_AddInvalidDay(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a recipe
+	recipe := map[string]interface{}{
+		"id":       "invalid-day-recipe",
+		"title":    "Invalid Day Test",
+		"servings": 2,
+		"ingredients": []map[string]interface{}{
+			{"name": "tomato", "quantity": 1, "unit": "pcs", "category": "produce"},
+		},
+		"steps":    []string{"Slice"},
+		"source":   "manual",
+		"language": "en",
+	}
+	recipes := []interface{}{recipe}
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644)
+
+	// Create a plan
+	runCmd(t, home, "plan", "create", "--days", "7")
+
+	// Try to add with invalid day name
+	_, stderr, err := runCmd(t, home, "plan", "add", "invalidday", "invalid-day-recipe")
+	if err == nil {
+		t.Error("expected error for invalid day name")
+	}
+	if !strings.Contains(stderr, "not in") && !strings.Contains(stderr, "nicht im") {
+		t.Errorf("expected 'not in plan' error, got: %s", stderr)
+	}
+}
+
+func TestPlan_RemoveEmptyDay(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a plan but don't add any recipes
+	runCmd(t, home, "plan", "create", "--days", "7")
+
+	// Try to remove from empty day (should not error, just report nothing to remove)
+	stdout, _, err := runCmd(t, home, "plan", "remove", "monday")
+	if err != nil {
+		t.Fatalf("plan remove empty day failed: %v", err)
+	}
+	// Should indicate day is empty
+	if !strings.Contains(stdout, "empty") && !strings.Contains(stdout, "leer") && !strings.Contains(stdout, "Monday") {
+		t.Errorf("expected empty day indication, got: %s", stdout)
+	}
+}
+
+func TestPlan_ReplaceExistingEntry(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create two recipes
+	recipes := []map[string]interface{}{
+		{
+			"id":       "replace-recipe-1",
+			"title":    "First Recipe",
+			"servings": 2,
+			"ingredients": []map[string]interface{}{
+				{"name": "apple", "quantity": 1, "unit": "pcs", "category": "produce"},
+			},
+			"steps":    []string{"Eat"},
+			"source":   "manual",
+			"language": "en",
+		},
+		{
+			"id":       "replace-recipe-2",
+			"title":    "Second Recipe",
+			"servings": 4,
+			"ingredients": []map[string]interface{}{
+				{"name": "banana", "quantity": 2, "unit": "pcs", "category": "produce"},
+			},
+			"steps":    []string{"Peel and eat"},
+			"source":   "manual",
+			"language": "en",
+		},
+	}
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644)
+
+	// Create a plan and add first recipe
+	runCmd(t, home, "plan", "create", "--days", "7")
+	runCmd(t, home, "plan", "add", "thursday", "replace-recipe-1")
+
+	// Verify first recipe is there
+	stdout, _, _ := runCmd(t, home, "plan", "show")
+	if !strings.Contains(stdout, "First Recipe") {
+		t.Fatalf("first recipe should be in plan, got: %s", stdout)
+	}
+
+	// Add second recipe to same day (should replace)
+	runCmd(t, home, "plan", "add", "thursday", "replace-recipe-2")
+
+	// Verify second recipe replaced first
+	stdout, _, _ = runCmd(t, home, "plan", "show")
+	if strings.Contains(stdout, "First Recipe") {
+		t.Errorf("first recipe should have been replaced, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "Second Recipe") {
+		t.Errorf("second recipe should be in plan, got: %s", stdout)
+	}
+}
+
+func TestPlan_HelpCommands(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Test plan help
+	stdout, _, err := runCmd(t, home, "plan", "--help")
+	if err != nil {
+		t.Fatalf("plan help failed: %v", err)
+	}
+	if !strings.Contains(stdout, "add") {
+		t.Errorf("expected 'add' in plan help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "remove") {
+		t.Errorf("expected 'remove' in plan help, got: %s", stdout)
+	}
+
+	// Test plan add help
+	stdout, _, err = runCmd(t, home, "plan", "add", "--help")
+	if err != nil {
+		t.Fatalf("plan add help failed: %v", err)
+	}
+	if !strings.Contains(stdout, "servings") {
+		t.Errorf("expected 'servings' flag in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "days") {
+		t.Errorf("expected 'days' flag in help, got: %s", stdout)
+	}
+
+	// Test plan remove help
+	stdout, _, err = runCmd(t, home, "plan", "remove", "--help")
+	if err != nil {
+		t.Fatalf("plan remove help failed: %v", err)
+	}
+	if !strings.Contains(stdout, "day") || !strings.Contains(stdout, "remove") {
+		t.Errorf("expected usage info in help, got: %s", stdout)
+	}
+}
+
+func TestInteractive_PlanCommands(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a recipe
+	recipe := map[string]interface{}{
+		"id":       "interactive-plan-recipe",
+		"title":    "Interactive Plan Test",
+		"servings": 4,
+		"ingredients": []map[string]interface{}{
+			{"name": "flour", "quantity": 250, "unit": "g", "category": "pantry"},
+		},
+		"steps":    []string{"Mix"},
+		"source":   "manual",
+		"language": "en",
+	}
+	recipes := []interface{}{recipe}
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644)
+
+	session := startInteractive(t, home)
+	defer session.close()
+
+	// Create plan
+	session.send("plan create --days 7")
+	output := session.waitAndRead(500 * time.Millisecond)
+	if !strings.Contains(output, "7") && !strings.Contains(output, "created") && !strings.Contains(output, "erstellt") {
+		t.Errorf("expected plan created message, got: %s", output)
+	}
+
+	// Add recipe
+	session.send("plan add monday interactive-plan-recipe --servings 6")
+	output = session.waitAndRead(500 * time.Millisecond)
+	if !strings.Contains(output, "Interactive Plan Test") {
+		t.Errorf("expected recipe name in add output, got: %s", output)
+	}
+
+	// Show plan
+	session.send("plan show")
+	output = session.waitAndRead(500 * time.Millisecond)
+	if !strings.Contains(output, "Interactive Plan Test") {
+		t.Errorf("expected recipe in plan show, got: %s", output)
+	}
+
+	// Remove recipe
+	session.send("plan remove monday")
+	output = session.waitAndRead(500 * time.Millisecond)
+	if !strings.Contains(output, "Removed") && !strings.Contains(output, "entfernt") {
+		t.Errorf("expected remove confirmation, got: %s", output)
+	}
+
+	// Clear plan
+	session.send("plan clear")
+	output = session.waitAndRead(500 * time.Millisecond)
+	if !strings.Contains(output, "cleared") && !strings.Contains(output, "gelöscht") {
+		t.Errorf("expected clear confirmation, got: %s", output)
+	}
+}

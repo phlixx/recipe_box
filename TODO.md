@@ -2,16 +2,16 @@
 
 See `ITERATIONS.md` for full iteration plan.
 
-## Next: Iteration 10 - Meal Plan Management
+## Next: Iteration 11 - Shopping from Plan
 
-- [ ] Create `cmd/plan_add.go` (`plan add <day> <recipe-id> [--servings N] [--days N]`)
-- [ ] Create `cmd/plan_remove.go` (`plan remove <day>`)
-- [ ] Add day name parsing ("monday", "tuesday" -> dates in current plan)
-- [ ] Update `plan show` to display leftover visualization
-- [ ] Add `AddEntry` and `RemoveEntry` methods to plan service
-- [ ] Add tab completion for day names in interactive mode
-- [ ] Add tab completion for recipe IDs for `plan add` command
+- [ ] Add `--plan` flag to `shopping generate` command
+- [ ] Add `--days N` flag to limit shopping generation to first N days of plan
+- [ ] Implement `GenerateFromPlan` method in shopping service
+- [ ] Aggregate ingredients across all plan entries
+- [ ] Scale quantities by servings specified in plan entries
+- [ ] Track which recipe each item came from (for display)
 - [ ] Add i18n keys for new strings (EN + DE)
+- [ ] Update help text in interactive mode
 
 ## Testing Notes
 

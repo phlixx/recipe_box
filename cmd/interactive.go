@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"recipe_box/internal/i18n"
+	"recipe_box/internal/plan"
 	"recipe_box/internal/recipe"
 	"recipe_box/internal/storage"
 	"recipe_box/internal/ui"
@@ -116,6 +118,17 @@ func completer(d prompt.Document) []prompt.Suggest {
 			if words[1] == "get" || words[1] == "set" {
 				return prompt.FilterHasPrefix(configKeySuggestions(), words[2], true)
 			}
+		case "plan":
+			if words[1] == "add" || words[1] == "remove" {
+				return prompt.FilterHasPrefix(dayNameSuggestions(), words[2], true)
+			}
+		}
+	}
+
+	// Fourth word: suggest recipe IDs for plan add
+	if len(words) == 4 {
+		if words[0] == "plan" && words[1] == "add" {
+			return prompt.FilterHasPrefix(recipeIDSuggestions(), words[3], true)
 		}
 	}
 
@@ -156,6 +169,8 @@ func planSuggestions() []prompt.Suggest {
 	return []prompt.Suggest{
 		{Text: "create", Description: i18n.T(i18n.MsgCmdPlanCreateShort)},
 		{Text: "show", Description: i18n.T(i18n.MsgCmdPlanShowShort)},
+		{Text: "add", Description: i18n.T(i18n.MsgCmdPlanAddShort)},
+		{Text: "remove", Description: i18n.T(i18n.MsgCmdPlanRemoveShort)},
 		{Text: "clear", Description: i18n.T(i18n.MsgCmdPlanClearShort)},
 	}
 }
@@ -198,6 +213,49 @@ func recipeIDSuggestions() []prompt.Suggest {
 	return suggestions
 }
 
+// dayNameSuggestions returns day name suggestions for the current meal plan
+func dayNameSuggestions() []prompt.Suggest {
+	store, err := storage.New()
+	if err != nil {
+		return defaultDayNames()
+	}
+
+	planSvc := plan.NewService(store)
+	p, err := planSvc.Get()
+	if err != nil || p == nil {
+		return defaultDayNames()
+	}
+
+	// Return day names for dates in the plan
+	dates := p.GetDates()
+	suggestions := make([]prompt.Suggest, 0, len(dates))
+	for _, date := range dates {
+		t, err := time.Parse("2006-01-02", date)
+		if err != nil {
+			continue
+		}
+		dayName := strings.ToLower(t.Weekday().String())
+		suggestions = append(suggestions, prompt.Suggest{
+			Text:        dayName,
+			Description: date,
+		})
+	}
+	return suggestions
+}
+
+// defaultDayNames returns generic day name suggestions
+func defaultDayNames() []prompt.Suggest {
+	return []prompt.Suggest{
+		{Text: "monday", Description: "Monday"},
+		{Text: "tuesday", Description: "Tuesday"},
+		{Text: "wednesday", Description: "Wednesday"},
+		{Text: "thursday", Description: "Thursday"},
+		{Text: "friday", Description: "Friday"},
+		{Text: "saturday", Description: "Saturday"},
+		{Text: "sunday", Description: "Sunday"},
+	}
+}
+
 func printHelp() {
 	ui.TitlePrintf("%s\n\n", i18n.T(i18n.MsgAvailableCmd))
 
@@ -219,6 +277,8 @@ func printHelp() {
 	ui.SectionPrintf("plan\n")
 	fmt.Printf("  create            %s\n", i18n.T(i18n.MsgCmdPlanCreateShort))
 	fmt.Printf("  show              %s\n", i18n.T(i18n.MsgCmdPlanShowShort))
+	fmt.Printf("  add <day> <id>    %s\n", i18n.T(i18n.MsgCmdPlanAddShort))
+	fmt.Printf("  remove <day>      %s\n", i18n.T(i18n.MsgCmdPlanRemoveShort))
 	fmt.Printf("  clear             %s\n", i18n.T(i18n.MsgCmdPlanClearShort))
 
 	fmt.Println()

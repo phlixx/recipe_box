@@ -1,7 +1,15 @@
 package plan
 
 import (
+	"errors"
+
 	"recipe_box/internal/storage"
+)
+
+// Service errors
+var (
+	ErrNoPlan        = errors.New("no meal plan found")
+	ErrDateNotInPlan = errors.New("date not in meal plan")
 )
 
 const mealPlanFile = "meal_plan.json"
@@ -64,4 +72,55 @@ func (s *Service) Clear() error {
 // Save persists the meal plan
 func (s *Service) Save(plan *MealPlan) error {
 	return s.storage.Save(mealPlanFile, plan)
+}
+
+// AddEntry adds a recipe to a specific date in the plan
+func (s *Service) AddEntry(date string, recipeID string, servings int, coversDays int) error {
+	plan, err := s.Get()
+	if err != nil {
+		return err
+	}
+	if plan == nil {
+		return ErrNoPlan
+	}
+
+	if !plan.IsDateInPlan(date) {
+		return ErrDateNotInPlan
+	}
+
+	if coversDays < 1 {
+		coversDays = 1
+	}
+
+	entry := PlanEntry{
+		Date:       date,
+		RecipeID:   recipeID,
+		Servings:   servings,
+		CoversDays: coversDays,
+	}
+
+	plan.AddEntry(entry)
+	return s.Save(plan)
+}
+
+// RemoveEntry removes the entry for a specific date
+func (s *Service) RemoveEntry(date string) (bool, error) {
+	plan, err := s.Get()
+	if err != nil {
+		return false, err
+	}
+	if plan == nil {
+		return false, ErrNoPlan
+	}
+
+	if !plan.IsDateInPlan(date) {
+		return false, ErrDateNotInPlan
+	}
+
+	removed := plan.RemoveEntry(date)
+	if !removed {
+		return false, nil
+	}
+
+	return true, s.Save(plan)
 }
