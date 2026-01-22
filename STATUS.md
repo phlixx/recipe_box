@@ -35,4 +35,6 @@ None.
 - Added `Scale()` method to Recipe model with full test coverage
 - Added `--servings` flag to recipe view, recipe generate, shopping generate
 
-**Next**: Create README.md for the repository
+- Created comprehensive README.md with installation, usage, and development docs
+
+**All post-MVP Phase 1 iterations (6-8) complete!**
