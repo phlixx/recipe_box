@@ -2,18 +2,25 @@
 
 See `ITERATIONS.md` for full iteration plan.
 
-## Next: Iteration 12 - AI Meal Planning
+## Phase 2 Complete ✅
 
-- [ ] Add `plan generate` command
-- [ ] Add `--days N` flag (default 7)
-- [ ] Add dietary/cuisine constraint flags (reuse from recipe generate)
-- [ ] Implement `GenerateMealPlan` method in AI service
-- [ ] Add approval flow for generated suggestions
-- [ ] Option to auto-create recipes or just show suggestions
-- [ ] Consider balance/variety in AI prompt
-- [ ] Add i18n keys for new strings (EN + DE)
+All Phase 2 (Meal Planning) iterations are complete:
+- Iteration 9: Meal Plan Foundation ✅
+- Iteration 10: Meal Plan Management ✅
+- Iteration 11: Shopping from Plan ✅
+- Iteration 12: AI Meal Planning ✅
+
+## Future: Phase 3 - Advanced Features
+
+Ideas for future development:
+- Recipe import from URL
+- Pantry tracking (track what you have)
+- Export to PDF/Markdown
+- Recipe sharing
+- Nutritional information
+- Recipe categories and filtering
 
 ## Testing Notes
 
-- API mock server in `e2e/e2e_test.go` enables testing `recipe generate` without real API calls
+- API mock server in `e2e/e2e_test.go` enables testing `recipe generate` and `plan generate` without real API calls
 - Set `ANTHROPIC_API_URL` env var to override API endpoint for testing

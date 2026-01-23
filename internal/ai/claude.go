@@ -57,6 +57,178 @@ type GenerateOptions struct {
 	Servings    int    // target servings (0 = default/4)
 }
 
+// MealPlanOptions contains parameters for generating a meal plan
+type MealPlanOptions struct {
+	Days       int    // number of days to plan
+	Cuisine    string // optional cuisine preference
+	Vegetarian bool   // vegetarian constraint
+	Quick      bool   // quick meals only (under 30 min)
+	Language   string // "en" or "de"
+}
+
+// MealSuggestion represents a single meal suggestion for a day
+type MealSuggestion struct {
+	Day         string `json:"day"`         // e.g., "Monday" or "Montag"
+	Date        string `json:"date"`        // ISO 8601 date
+	MealName    string `json:"meal_name"`   // suggested dish name
+	Description string `json:"description"` // brief description
+	Servings    int    `json:"servings"`    // suggested servings
+	PrepTime    int    `json:"prep_time"`   // estimated prep time in minutes
+	CookTime    int    `json:"cook_time"`   // estimated cook time in minutes
+}
+
+// MealPlanSuggestions contains the AI-generated meal suggestions
+type MealPlanSuggestions struct {
+	Suggestions []MealSuggestion `json:"suggestions"`
+}
+
+// GenerateMealPlan generates meal suggestions for a week
+func (c *Client) GenerateMealPlan(opts MealPlanOptions, dates []string) (*MealPlanSuggestions, error) {
+	if opts.Language == "" {
+		opts.Language = "en"
+	}
+	if opts.Days <= 0 {
+		opts.Days = 7
+	}
+
+	prompt := buildMealPlanPrompt(opts, dates)
+
+	reqBody := messagesRequest{
+		Model:     model,
+		MaxTokens: 2048,
+		Messages: []message{
+			{Role: "user", Content: prompt},
+		},
+	}
+
+	body, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", getAPIURL(), bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-api-key", c.apiKey)
+	req.Header.Set("anthropic-version", apiVersion)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("API request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to generate meal plan: %s (status %d)", string(respBody), resp.StatusCode)
+	}
+
+	var messagesResp messagesResponse
+	if err := json.Unmarshal(respBody, &messagesResp); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	if len(messagesResp.Content) == 0 {
+		return nil, fmt.Errorf("failed to generate meal plan: empty response")
+	}
+
+	return parseMealPlanFromResponse(messagesResp.Content[0].Text)
+}
+
+func buildMealPlanPrompt(opts MealPlanOptions, dates []string) string {
+	var constraints []string
+
+	if opts.Cuisine != "" {
+		constraints = append(constraints, fmt.Sprintf("Cuisine preference: %s", opts.Cuisine))
+	}
+	if opts.Vegetarian {
+		constraints = append(constraints, "All meals must be vegetarian (no meat or fish)")
+	}
+	if opts.Quick {
+		constraints = append(constraints, "All meals should be quick to prepare (total time under 30 minutes)")
+	}
+
+	constraintText := ""
+	if len(constraints) > 0 {
+		constraintText = "\n\nConstraints:\n- " + strings.Join(constraints, "\n- ")
+	}
+
+	// Build date list for the prompt
+	dateList := strings.Join(dates, ", ")
+
+	// Language instruction
+	langInstruction := "Write all text (day names, meal names, descriptions) in English."
+	if opts.Language == "de" {
+		langInstruction = "Write all text (day names, meal names, descriptions) in German (Deutsch)."
+	}
+
+	return fmt.Sprintf(`Generate a balanced meal plan for %d days.
+
+%s%s
+
+The dates for the plan are: %s
+
+Create a varied meal plan with:
+- Different protein sources across the week
+- Mix of cuisines and cooking styles
+- Balance of quick and more elaborate meals (unless quick-only is specified)
+- Practical considerations (e.g., meals that produce leftovers can be scheduled before lighter days)
+
+Return ONLY valid JSON in this exact format (no markdown, no explanation):
+{
+  "suggestions": [
+    {
+      "day": "Monday",
+      "date": "2024-01-15",
+      "meal_name": "Dish Name",
+      "description": "Brief description of the dish",
+      "servings": 4,
+      "prep_time": 15,
+      "cook_time": 30
+    }
+  ]
+}
+
+Include exactly %d suggestions, one for each day.
+Use the provided dates in the date field (format YYYY-MM-DD).
+Default servings to 4 unless the dish is typically served differently.`, opts.Days, langInstruction, constraintText, dateList, opts.Days)
+}
+
+func parseMealPlanFromResponse(text string) (*MealPlanSuggestions, error) {
+	text = strings.TrimSpace(text)
+
+	// If wrapped in markdown code block, extract it
+	if strings.HasPrefix(text, "```") {
+		lines := strings.Split(text, "\n")
+		var jsonLines []string
+		inBlock := false
+		for _, line := range lines {
+			if strings.HasPrefix(line, "```") {
+				inBlock = !inBlock
+				continue
+			}
+			if inBlock {
+				jsonLines = append(jsonLines, line)
+			}
+		}
+		text = strings.Join(jsonLines, "\n")
+	}
+
+	var suggestions MealPlanSuggestions
+	if err := json.Unmarshal([]byte(text), &suggestions); err != nil {
+		return nil, fmt.Errorf("failed to parse meal plan JSON: %w\nResponse was: %s", err, text)
+	}
+
+	return &suggestions, nil
+}
+
 func (c *Client) GenerateRecipe(opts GenerateOptions) (*recipe.Recipe, error) {
 	// Default to English if not specified
 	if opts.Language == "" {

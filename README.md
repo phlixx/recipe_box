@@ -71,6 +71,7 @@ Type 'help' for commands, 'exit' to quit
 ## Features
 
 - **AI Recipe Generation** — Generate recipes by cuisine, ingredients, dietary needs, or freeform prompts
+- **AI Meal Planning** — Generate balanced weekly meal plans with one command
 - **Recipe Collection** — Save, organize, and manage your personal recipe library
 - **Shopping Lists** — Auto-generate shopping lists grouped by category (produce, dairy, etc.)
 - **Servings Scaling** — Scale any recipe up or down with automatic quantity adjustments
@@ -158,12 +159,37 @@ recipe_box recipe save                     # Save last generated
 recipe_box recipe add                      # Add manually
 ```
 
+### Meal Planning
+
+```bash
+# Create a meal plan
+recipe_box plan create --days 7
+
+# AI-generate a balanced week
+recipe_box plan generate --days 7
+recipe_box plan generate --vegetarian --quick
+recipe_box plan generate --cuisine italian
+
+# Manually add recipes to days
+recipe_box plan add monday <recipe-id> --servings 4
+recipe_box plan add tuesday <recipe-id> --days 2  # Covers leftovers
+
+# View and manage
+recipe_box plan show
+recipe_box plan remove wednesday
+recipe_box plan clear
+```
+
 ### Shopping Lists
 
 ```bash
 # Generate from one or more recipes
 recipe_box shopping generate <id>
 recipe_box shopping generate <id1> <id2> --servings 4
+
+# Generate from meal plan
+recipe_box shopping generate --plan           # Entire plan
+recipe_box shopping generate --plan --days 3  # First 3 days only
 
 # View and manage
 recipe_box shopping show    # Grouped by category

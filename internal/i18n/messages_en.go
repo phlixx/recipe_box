@@ -129,18 +129,20 @@ var messagesEN = map[string]string{
 	MsgCmdConfigSetShort: "Set a configuration value",
 
 	// Plan command descriptions
-	MsgCmdPlanShort:       "Manage meal plans",
-	MsgCmdPlanLong:        "Create, view, and manage your weekly meal plans.",
-	MsgCmdPlanCreateShort: "Create a new meal plan",
-	MsgCmdPlanCreateLong:  "Create a new meal plan starting from today.\n\nExamples:\n  recipe_box plan create\n  recipe_box plan create --days 5",
-	MsgCmdPlanShowShort:   "Show current meal plan",
-	MsgCmdPlanShowLong:    "Display the current meal plan with all scheduled meals.",
-	MsgCmdPlanClearShort:  "Clear the meal plan",
-	MsgCmdPlanClearLong:   "Remove the current meal plan.",
-	MsgCmdPlanAddShort:    "Add a recipe to a day",
-	MsgCmdPlanAddLong:     "Add a recipe to a specific day in the meal plan.\n\nExamples:\n  recipe_box plan add monday abc123\n  recipe_box plan add tuesday abc123 --servings 4\n  recipe_box plan add wednesday abc123 --servings 6 --days 2",
-	MsgCmdPlanRemoveShort: "Remove a recipe from a day",
-	MsgCmdPlanRemoveLong:  "Remove a recipe from a specific day in the meal plan.\n\nExamples:\n  recipe_box plan remove monday\n  recipe_box plan remove 2024-01-15",
+	MsgCmdPlanShort:         "Manage meal plans",
+	MsgCmdPlanLong:          "Create, view, and manage your weekly meal plans.",
+	MsgCmdPlanCreateShort:   "Create a new meal plan",
+	MsgCmdPlanCreateLong:    "Create a new meal plan starting from today.\n\nExamples:\n  recipe_box plan create\n  recipe_box plan create --days 5",
+	MsgCmdPlanShowShort:     "Show current meal plan",
+	MsgCmdPlanShowLong:      "Display the current meal plan with all scheduled meals.",
+	MsgCmdPlanClearShort:    "Clear the meal plan",
+	MsgCmdPlanClearLong:     "Remove the current meal plan.",
+	MsgCmdPlanAddShort:      "Add a recipe to a day",
+	MsgCmdPlanAddLong:       "Add a recipe to a specific day in the meal plan.\n\nExamples:\n  recipe_box plan add monday abc123\n  recipe_box plan add tuesday abc123 --servings 4\n  recipe_box plan add wednesday abc123 --servings 6 --days 2",
+	MsgCmdPlanRemoveShort:   "Remove a recipe from a day",
+	MsgCmdPlanRemoveLong:    "Remove a recipe from a specific day in the meal plan.\n\nExamples:\n  recipe_box plan remove monday\n  recipe_box plan remove 2024-01-15",
+	MsgCmdPlanGenerateShort: "Generate a meal plan with AI",
+	MsgCmdPlanGenerateLong:  "Generate a balanced meal plan using Claude AI.\n\nExamples:\n  recipe_box plan generate\n  recipe_box plan generate --days 5\n  recipe_box plan generate --vegetarian\n  recipe_box plan generate --cuisine italian --quick",
 
 	// Plan messages
 	MsgPlanCreated:       "Meal plan created for %d days (starting %s)",
@@ -157,6 +159,20 @@ var messagesEN = map[string]string{
 	MsgPlanEntryRemoved:  "Removed recipe from %s",
 	MsgPlanDateNotInPlan: "Date '%s' is not in the current meal plan",
 	MsgPlanCoversDays:    "covers %d days",
+
+	// Plan generate messages
+	MsgPlanGenerating:          "Generating meal plan...",
+	MsgPlanGeneratedHeader:     "Suggested Meal Plan (%d days)",
+	MsgPlanSuggestionDay:       "%s: %s",
+	MsgPlanApprovePrompt:       "Apply this meal plan? (y/n)",
+	MsgPlanApproved:            "Meal plan applied!",
+	MsgPlanDiscarded:           "Meal plan discarded.",
+	MsgPlanCreateRecipesPrompt: "Create full recipes for these meals? (y/n)",
+	MsgPlanCreatingRecipes:     "Creating recipe: %s...",
+	MsgPlanRecipeCreated:       "Recipe created: %s (%s)",
+	MsgPlanAllRecipesCreated:   "All recipes created and added to plan.",
+	MsgPlanServingsInfo:        "%d servings",
+	MsgPlanVarietyNote:         "balanced variety with different cuisines and cooking styles",
 
 	// Config key descriptions
 	MsgConfigKeyAPIKey:   "Claude API key",

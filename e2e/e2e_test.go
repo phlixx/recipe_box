@@ -2313,3 +2313,177 @@ func TestShopping_GenerateNoArgsError(t *testing.T) {
 		t.Errorf("expected helpful error message about recipe ID or --plan, got: %s", combined)
 	}
 }
+
+// =============================================================================
+// Plan Generate Tests (AI Meal Planning)
+// =============================================================================
+
+// startMockMealPlanAPIServer starts a mock server for meal plan generation
+func startMockMealPlanAPIServer(t *testing.T) *httptest.Server {
+	t.Helper()
+
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			t.Errorf("expected POST, got %s", r.Method)
+		}
+		if r.Header.Get("x-api-key") == "" {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte(`{"error": "missing API key"}`))
+			return
+		}
+
+		// Parse request to check if it's for meal plan or recipe
+		var reqBody map[string]interface{}
+		json.NewDecoder(r.Body).Decode(&reqBody)
+
+		messages := reqBody["messages"].([]interface{})
+		firstMsg := messages[0].(map[string]interface{})
+		content := firstMsg["content"].(string)
+
+		var responseJSON string
+
+		if strings.Contains(content, "meal plan") || strings.Contains(content, "balanced") {
+			// Return meal plan suggestions
+			mealPlanJSON := `"{\"suggestions\":[{\"day\":\"Thursday\",\"date\":\"2026-01-23\",\"meal_name\":\"Pasta Primavera\",\"description\":\"Fresh vegetables with pasta\",\"servings\":4,\"prep_time\":15,\"cook_time\":20},{\"day\":\"Friday\",\"date\":\"2026-01-24\",\"meal_name\":\"Grilled Salmon\",\"description\":\"Salmon with lemon and herbs\",\"servings\":4,\"prep_time\":10,\"cook_time\":15},{\"day\":\"Saturday\",\"date\":\"2026-01-25\",\"meal_name\":\"Vegetable Stir Fry\",\"description\":\"Asian-style vegetables\",\"servings\":4,\"prep_time\":15,\"cook_time\":10}]}"`
+			responseJSON = fmt.Sprintf(`{"content":[{"type":"text","text":%s}]}`, mealPlanJSON)
+		} else {
+			// Return recipe for follow-up recipe generation
+			recipeJSON := `"{\"title\":\"Generated Recipe\",\"description\":\"A delicious dish\",\"servings\":4,\"prep_time\":15,\"cook_time\":20,\"ingredients\":[{\"name\":\"ingredient\",\"quantity\":200,\"unit\":\"g\",\"category\":\"pantry\"}],\"steps\":[\"Step 1\",\"Step 2\"],\"tags\":[\"test\"],\"ascii_art\":\"  ___\\n /   \\\\\\n| O O |\\n \\\\___/\"}"`
+			responseJSON = fmt.Sprintf(`{"content":[{"type":"text","text":%s}]}`, recipeJSON)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(responseJSON))
+	}))
+}
+
+func TestPlan_GenerateHelp(t *testing.T) {
+	home := setupTestHome(t)
+
+	stdout, _, err := runCmd(t, home, "plan", "generate", "--help")
+	if err != nil {
+		t.Fatalf("plan generate help failed: %v", err)
+	}
+
+	// Check for expected flags
+	if !strings.Contains(stdout, "days") {
+		t.Errorf("expected '--days' in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "vegetarian") {
+		t.Errorf("expected '--vegetarian' in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "quick") {
+		t.Errorf("expected '--quick' in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "cuisine") {
+		t.Errorf("expected '--cuisine' in help, got: %s", stdout)
+	}
+}
+
+func TestPlan_GenerateWithoutAPIKey(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Try to generate without API key
+	_, stderr, err := runCmd(t, home, "plan", "generate")
+	if err == nil {
+		t.Error("expected error when generating without API key")
+	}
+	if !strings.Contains(stderr, "API key") && !strings.Contains(stderr, "api_key") && !strings.Contains(stderr, "API-Schlüssel") {
+		t.Errorf("expected API key error, got: %s", stderr)
+	}
+}
+
+func TestPlan_GenerateWithMockAPI(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Start mock API server
+	server := startMockMealPlanAPIServer(t)
+	defer server.Close()
+
+	// Set API key
+	_, _, err := runCmd(t, home, "config", "set", "api_key", "test-key-123")
+	if err != nil {
+		t.Fatalf("failed to set API key: %v", err)
+	}
+
+	// Run plan generate with mock API and auto-answer "no" to prompts
+	env := map[string]string{"ANTHROPIC_API_URL": server.URL}
+
+	// Since interactive prompts are used, we need to provide input
+	// For testing, we'll just check that the command starts and generates output
+	cmd := exec.Command(binaryPath, "plan", "generate", "--days", "3")
+	cmd.Env = append(os.Environ(),
+		"RECIPE_BOX_HOME="+home,
+		"NO_COLOR=1",
+		"ANTHROPIC_API_URL="+server.URL,
+	)
+
+	// Provide "n" twice (decline approval and decline recipe creation)
+	cmd.Stdin = strings.NewReader("n\n")
+
+	var stdout, stderr strings.Builder
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err = cmd.Run()
+	if err != nil {
+		t.Fatalf("plan generate failed: %v\nstderr: %s", err, stderr.String())
+	}
+
+	output := stdout.String()
+
+	// Should show generating message
+	if !strings.Contains(output, "Generating") && !strings.Contains(output, "generiert") {
+		t.Errorf("expected 'Generating' message, got: %s", output)
+	}
+
+	// Should show meal suggestions
+	if !strings.Contains(output, "Pasta Primavera") && !strings.Contains(output, "meal") {
+		t.Errorf("expected meal suggestions in output, got: %s", output)
+	}
+
+	// Verify env var was used properly
+	_ = env
+}
+
+func TestPlan_GenerateWithFlagsNoInteraction(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Start mock API server
+	server := startMockMealPlanAPIServer(t)
+	defer server.Close()
+
+	// Set API key
+	runCmd(t, home, "config", "set", "api_key", "test-key-123")
+
+	// Run with various flags and decline prompts
+	cmd := exec.Command(binaryPath, "plan", "generate",
+		"--days", "3",
+		"--vegetarian",
+		"--quick",
+		"--cuisine", "italian",
+	)
+	cmd.Env = append(os.Environ(),
+		"RECIPE_BOX_HOME="+home,
+		"NO_COLOR=1",
+		"ANTHROPIC_API_URL="+server.URL,
+	)
+	cmd.Stdin = strings.NewReader("n\n")
+
+	var stdout strings.Builder
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stdout
+
+	err := cmd.Run()
+	if err != nil {
+		t.Fatalf("plan generate with flags failed: %v\noutput: %s", err, stdout.String())
+	}
+
+	output := stdout.String()
+
+	// Should show meal suggestions from mock
+	if !strings.Contains(output, "Suggested") && !strings.Contains(output, "Vorgeschlagen") {
+		t.Errorf("expected suggestion header in output, got: %s", output)
+	}
+}

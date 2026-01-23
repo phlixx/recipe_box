@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strings"
@@ -194,9 +195,27 @@ func parseServings(s string) (int, error) {
 }
 
 func promptYesNo(question string) bool {
-	emptyCompleter := func(d prompt.Document) []prompt.Suggest { return nil }
-	answer := prompt.Input(question+" ", emptyCompleter)
+	// Check if stdin is a terminal
+	if isTerminal() {
+		emptyCompleter := func(d prompt.Document) []prompt.Suggest { return nil }
+		answer := prompt.Input(question+" ", emptyCompleter)
+		return isYes(answer)
+	}
+
+	// Fallback for non-TTY (e.g., tests, piped input)
+	fmt.Print(question + " ")
+	reader := bufio.NewReader(os.Stdin)
+	answer, _ := reader.ReadString('\n')
+	answer = strings.TrimSpace(answer)
 	return isYes(answer)
+}
+
+func isTerminal() bool {
+	fi, err := os.Stdin.Stat()
+	if err != nil {
+		return false
+	}
+	return (fi.Mode() & os.ModeCharDevice) != 0
 }
 
 func isYes(s string) bool {

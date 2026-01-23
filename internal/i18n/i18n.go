@@ -134,18 +134,20 @@ const (
 	MsgCmdConfigSetShort = "cmd.config.set.short"
 
 	// Plan command descriptions
-	MsgCmdPlanShort       = "cmd.plan.short"
-	MsgCmdPlanLong        = "cmd.plan.long"
-	MsgCmdPlanCreateShort = "cmd.plan.create.short"
-	MsgCmdPlanCreateLong  = "cmd.plan.create.long"
-	MsgCmdPlanShowShort   = "cmd.plan.show.short"
-	MsgCmdPlanShowLong    = "cmd.plan.show.long"
-	MsgCmdPlanClearShort  = "cmd.plan.clear.short"
-	MsgCmdPlanClearLong   = "cmd.plan.clear.long"
-	MsgCmdPlanAddShort    = "cmd.plan.add.short"
-	MsgCmdPlanAddLong     = "cmd.plan.add.long"
-	MsgCmdPlanRemoveShort = "cmd.plan.remove.short"
-	MsgCmdPlanRemoveLong  = "cmd.plan.remove.long"
+	MsgCmdPlanShort         = "cmd.plan.short"
+	MsgCmdPlanLong          = "cmd.plan.long"
+	MsgCmdPlanCreateShort   = "cmd.plan.create.short"
+	MsgCmdPlanCreateLong    = "cmd.plan.create.long"
+	MsgCmdPlanShowShort     = "cmd.plan.show.short"
+	MsgCmdPlanShowLong      = "cmd.plan.show.long"
+	MsgCmdPlanClearShort    = "cmd.plan.clear.short"
+	MsgCmdPlanClearLong     = "cmd.plan.clear.long"
+	MsgCmdPlanAddShort      = "cmd.plan.add.short"
+	MsgCmdPlanAddLong       = "cmd.plan.add.long"
+	MsgCmdPlanRemoveShort   = "cmd.plan.remove.short"
+	MsgCmdPlanRemoveLong    = "cmd.plan.remove.long"
+	MsgCmdPlanGenerateShort = "cmd.plan.generate.short"
+	MsgCmdPlanGenerateLong  = "cmd.plan.generate.long"
 
 	// Plan messages
 	MsgPlanCreated       = "plan.created"
@@ -162,6 +164,20 @@ const (
 	MsgPlanEntryRemoved  = "plan.entry_removed"
 	MsgPlanDateNotInPlan = "plan.date_not_in_plan"
 	MsgPlanCoversDays    = "plan.covers_days"
+
+	// Plan generate messages
+	MsgPlanGenerating          = "plan.generating"
+	MsgPlanGeneratedHeader     = "plan.generated_header"
+	MsgPlanSuggestionDay       = "plan.suggestion_day"
+	MsgPlanApprovePrompt       = "plan.approve_prompt"
+	MsgPlanApproved            = "plan.approved"
+	MsgPlanDiscarded           = "plan.discarded"
+	MsgPlanCreateRecipesPrompt = "plan.create_recipes_prompt"
+	MsgPlanCreatingRecipes     = "plan.creating_recipes"
+	MsgPlanRecipeCreated       = "plan.recipe_created"
+	MsgPlanAllRecipesCreated   = "plan.all_recipes_created"
+	MsgPlanServingsInfo        = "plan.servings_info"
+	MsgPlanVarietyNote         = "plan.variety_note"
 
 	// Config key descriptions
 	MsgConfigKeyAPIKey   = "config.key.api_key"

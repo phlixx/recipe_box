@@ -421,15 +421,15 @@ recipe_box shopping show
 
 ---
 
-## Iteration 12: AI Meal Planning
+## Iteration 12: AI Meal Planning ✅
 
 **Goal**: AI suggests a balanced week of meals
 
 **Deliverables**:
-- [ ] `plan generate [--days N]` - AI generates meal suggestions
-- [ ] Cuisine/dietary constraints (reuse recipe generate flags)
-- [ ] Option to auto-create recipes or just show suggestions
-- [ ] Balance considerations (variety, nutrition)
+- [x] `plan generate [--days N]` - AI generates meal suggestions
+- [x] Cuisine/dietary constraints (reuse recipe generate flags)
+- [x] Option to auto-create recipes or just show suggestions
+- [x] Balance considerations (variety, nutrition)
 
 **Exit Criteria**:
 ```bash
@@ -438,20 +438,20 @@ recipe_box plan generate --days 7 --vegetarian
 # User can approve/modify before saving
 ```
 
-**Files to create/modify**:
+**Files created/modified**:
 - `cmd/plan_generate.go`
-- `internal/ai/claude.go` (GenerateMealPlan method)
+- `internal/ai/claude.go` (GenerateMealPlan method, MealPlanOptions, MealSuggestion types)
 
 ---
 
-## Summary - Phase 2
+## Summary - Phase 2 ✅
 
 | Iter | Focus | Key Commands | Status |
 |------|-------|--------------|--------|
-| 9 | Plan Foundation | `plan create/show/clear` | Done |
-| 10 | Plan Management | `plan add/remove` | Done |
-| 11 | Shopping from Plan | `shopping generate --plan` | Done |
-| 12 | AI Meal Planning | `plan generate` | Pending |
+| 9 | Plan Foundation | `plan create/show/clear` | ✅ Done |
+| 10 | Plan Management | `plan add/remove` | ✅ Done |
+| 11 | Shopping from Plan | `shopping generate --plan` | ✅ Done |
+| 12 | AI Meal Planning | `plan generate` | ✅ Done |
 
 **Total: 4 iterations for v0.3**
 
