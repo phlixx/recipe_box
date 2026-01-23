@@ -182,6 +182,7 @@ func planSuggestions() []prompt.Suggest {
 		{Text: "show", Description: i18n.T(i18n.MsgCmdPlanShowShort)},
 		{Text: "add", Description: i18n.T(i18n.MsgCmdPlanAddShort)},
 		{Text: "remove", Description: i18n.T(i18n.MsgCmdPlanRemoveShort)},
+		{Text: "generate", Description: i18n.T(i18n.MsgCmdPlanGenerateShort)},
 		{Text: "clear", Description: i18n.T(i18n.MsgCmdPlanClearShort)},
 	}
 }
@@ -290,6 +291,7 @@ func printHelp() {
 	fmt.Printf("  show              %s\n", i18n.T(i18n.MsgCmdPlanShowShort))
 	fmt.Printf("  add <day> <id>    %s\n", i18n.T(i18n.MsgCmdPlanAddShort))
 	fmt.Printf("  remove <day>      %s\n", i18n.T(i18n.MsgCmdPlanRemoveShort))
+	fmt.Printf("  generate          %s\n", i18n.T(i18n.MsgCmdPlanGenerateShort))
 	fmt.Printf("  clear             %s\n", i18n.T(i18n.MsgCmdPlanClearShort))
 
 	fmt.Println()
