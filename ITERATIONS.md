@@ -397,11 +397,11 @@ recipe_box plan remove monday
 **Goal**: Generate aggregated shopping list from meal plan
 
 **Deliverables**:
-- [ ] `shopping generate --plan` - Generate from entire meal plan
-- [ ] `shopping generate --plan --days N` - Generate from first N days
-- [ ] Aggregate ingredients across all plan entries
-- [ ] Scale quantities by servings
-- [ ] Track which recipe each item came from
+- [x] `shopping generate --plan` - Generate from entire meal plan
+- [x] `shopping generate --plan --days N` - Generate from first N days
+- [x] Aggregate ingredients across all plan entries
+- [x] Scale quantities by servings
+- [x] Track which recipe each item came from
 
 **Exit Criteria**:
 ```bash
@@ -450,7 +450,7 @@ recipe_box plan generate --days 7 --vegetarian
 |------|-------|--------------|--------|
 | 9 | Plan Foundation | `plan create/show/clear` | Done |
 | 10 | Plan Management | `plan add/remove` | Done |
-| 11 | Shopping from Plan | `shopping generate --plan` | Pending |
+| 11 | Shopping from Plan | `shopping generate --plan` | Done |
 | 12 | AI Meal Planning | `plan generate` | Pending |
 
 **Total: 4 iterations for v0.3**

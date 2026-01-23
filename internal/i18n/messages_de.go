@@ -20,12 +20,14 @@ var messagesDE = map[string]string{
 	MsgRecipeNoGenerated: "Kein generiertes Rezept zum Speichern. Nutze zuerst 'recipe_box recipe generate'.",
 
 	// Shopping list
-	MsgShoppingEmpty:      "Einkaufsliste ist leer.",
-	MsgShoppingEmptyHint:  "Nutze 'recipe_box shopping generate <rezept-id>' um Artikel hinzuzufügen.",
-	MsgShoppingCleared:    "Einkaufsliste geleert.",
-	MsgShoppingAdded:      "%d Zutaten von '%s' zur Einkaufsliste hinzugefügt",
-	MsgShoppingShowHint:   "Nutze 'recipe_box shopping show' um deine Einkaufsliste anzuzeigen.",
-	MsgShoppingListHeader: "Einkaufsliste (%d Artikel)",
+	MsgShoppingEmpty:          "Einkaufsliste ist leer.",
+	MsgShoppingEmptyHint:      "Nutze 'recipe_box shopping generate <rezept-id>' um Artikel hinzuzufügen.",
+	MsgShoppingCleared:        "Einkaufsliste geleert.",
+	MsgShoppingAdded:          "%d Zutaten von '%s' zur Einkaufsliste hinzugefügt",
+	MsgShoppingShowHint:       "Nutze 'recipe_box shopping show' um deine Einkaufsliste anzuzeigen.",
+	MsgShoppingListHeader:     "Einkaufsliste (%d Artikel)",
+	MsgShoppingGenerateNoArgs: "Bitte eine Rezept-ID angeben oder --plan verwenden, um aus dem Essensplan zu generieren",
+	MsgShoppingPlanNoRecipes:  "Keine Rezepte im Essensplan für die angegebenen Tage gefunden.",
 
 	// Categories
 	MsgCategoryProduce: "Obst & Gemüse",
@@ -115,8 +117,8 @@ var messagesDE = map[string]string{
 	MsgCmdRecipeDeleteLong:    "Entfernt ein Rezept aus deiner Sammlung.",
 
 	// Shopping subcommand descriptions
-	MsgCmdShoppingGenerateShort: "Einkaufsliste aus Rezept erstellen",
-	MsgCmdShoppingGenerateLong:  "Fügt Zutaten eines Rezepts zur Einkaufsliste hinzu.\n\nMit --servings kannst du die Mengen für eine andere Portionsanzahl skalieren.\n\nBeispiele:\n  recipe_box shopping generate abc123\n  recipe_box shopping generate abc123 def456\n  recipe_box shopping generate abc123 --servings 8",
+	MsgCmdShoppingGenerateShort: "Einkaufsliste aus Rezept oder Essensplan erstellen",
+	MsgCmdShoppingGenerateLong:  "Fügt Zutaten von Rezepten zur Einkaufsliste hinzu.\n\nMit --plan wird die Liste aus dem Essensplan erstellt (alle Rezepte).\nMit --days zusammen mit --plan werden nur die ersten N Tage berücksichtigt.\nMit --servings kannst du die Mengen skalieren (für einzelne Rezepte).\n\nBeispiele:\n  recipe_box shopping generate abc123\n  recipe_box shopping generate abc123 def456\n  recipe_box shopping generate abc123 --servings 8\n  recipe_box shopping generate --plan\n  recipe_box shopping generate --plan --days 3",
 	MsgCmdShoppingShowShort:     "Aktuelle Einkaufsliste anzeigen",
 	MsgCmdShoppingShowLong:      "Zeigt alle Artikel der Einkaufsliste, nach Kategorien gruppiert.",
 	MsgCmdShoppingClearShort:    "Einkaufsliste leeren",

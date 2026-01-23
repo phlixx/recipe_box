@@ -70,8 +70,23 @@ func formatItem(item shopping.Item) string {
 	if item.Quantity == 0 && item.Unit == "" {
 		return item.Name
 	}
+	qtyStr := formatQuantity(item.Quantity)
 	if item.Unit == "" {
-		return fmt.Sprintf("%g %s", item.Quantity, item.Name)
+		return fmt.Sprintf("%s %s", qtyStr, item.Name)
 	}
-	return fmt.Sprintf("%g %s %s", item.Quantity, i18n.Unit(item.Unit), item.Name)
+	return fmt.Sprintf("%s %s %s", qtyStr, i18n.Unit(item.Unit), item.Name)
+}
+
+// formatQuantity formats a quantity with nice rounding
+func formatQuantity(qty float64) string {
+	// Round to 2 decimal places to avoid floating point display issues
+	rounded := float64(int(qty*100+0.5)) / 100
+
+	// If it's a whole number, display without decimals
+	if rounded == float64(int(rounded)) {
+		return fmt.Sprintf("%d", int(rounded))
+	}
+
+	// Otherwise display with minimal decimals
+	return fmt.Sprintf("%g", rounded)
 }

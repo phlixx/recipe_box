@@ -2,16 +2,16 @@
 
 See `ITERATIONS.md` for full iteration plan.
 
-## Next: Iteration 11 - Shopping from Plan
+## Next: Iteration 12 - AI Meal Planning
 
-- [ ] Add `--plan` flag to `shopping generate` command
-- [ ] Add `--days N` flag to limit shopping generation to first N days of plan
-- [ ] Implement `GenerateFromPlan` method in shopping service
-- [ ] Aggregate ingredients across all plan entries
-- [ ] Scale quantities by servings specified in plan entries
-- [ ] Track which recipe each item came from (for display)
+- [ ] Add `plan generate` command
+- [ ] Add `--days N` flag (default 7)
+- [ ] Add dietary/cuisine constraint flags (reuse from recipe generate)
+- [ ] Implement `GenerateMealPlan` method in AI service
+- [ ] Add approval flow for generated suggestions
+- [ ] Option to auto-create recipes or just show suggestions
+- [ ] Consider balance/variety in AI prompt
 - [ ] Add i18n keys for new strings (EN + DE)
-- [ ] Update help text in interactive mode
 
 ## Testing Notes
 

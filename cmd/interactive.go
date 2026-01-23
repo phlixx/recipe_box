@@ -112,7 +112,7 @@ func completer(d prompt.Document) []prompt.Suggest {
 			}
 		case "shopping":
 			if words[1] == "generate" {
-				return prompt.FilterHasPrefix(recipeIDSuggestions(), words[2], true)
+				return prompt.FilterHasPrefix(shoppingGenerateSuggestions(), words[2], true)
 			}
 		case "config":
 			if words[1] == "get" || words[1] == "set" {
@@ -163,6 +163,17 @@ func shoppingSuggestions() []prompt.Suggest {
 		{Text: "show", Description: i18n.T(i18n.MsgCmdShoppingShowShort)},
 		{Text: "clear", Description: i18n.T(i18n.MsgCmdShoppingClearShort)},
 	}
+}
+
+// shoppingGenerateSuggestions returns suggestions for shopping generate args
+func shoppingGenerateSuggestions() []prompt.Suggest {
+	// Start with --plan flag
+	suggestions := []prompt.Suggest{
+		{Text: "--plan", Description: "Generate from meal plan"},
+	}
+	// Add recipe IDs
+	suggestions = append(suggestions, recipeIDSuggestions()...)
+	return suggestions
 }
 
 func planSuggestions() []prompt.Suggest {
@@ -269,9 +280,9 @@ func printHelp() {
 
 	fmt.Println()
 	ui.SectionPrintf("shopping\n")
-	fmt.Printf("  generate <id>     %s\n", i18n.T(i18n.MsgCmdShoppingGenerateShort))
-	fmt.Printf("  show              %s\n", i18n.T(i18n.MsgCmdShoppingShowShort))
-	fmt.Printf("  clear             %s\n", i18n.T(i18n.MsgCmdShoppingClearShort))
+	fmt.Printf("  generate <id>|--plan  %s\n", i18n.T(i18n.MsgCmdShoppingGenerateShort))
+	fmt.Printf("  show                  %s\n", i18n.T(i18n.MsgCmdShoppingShowShort))
+	fmt.Printf("  clear                 %s\n", i18n.T(i18n.MsgCmdShoppingClearShort))
 
 	fmt.Println()
 	ui.SectionPrintf("plan\n")

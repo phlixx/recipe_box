@@ -20,12 +20,14 @@ var messagesEN = map[string]string{
 	MsgRecipeNoGenerated: "No generated recipe to save. Use 'recipe_box recipe generate' first.",
 
 	// Shopping list
-	MsgShoppingEmpty:      "Shopping list is empty.",
-	MsgShoppingEmptyHint:  "Use 'recipe_box shopping generate <recipe-id>' to add items.",
-	MsgShoppingCleared:    "Shopping list cleared.",
-	MsgShoppingAdded:      "Added %d ingredients from '%s' to shopping list",
-	MsgShoppingShowHint:   "Use 'recipe_box shopping show' to view your shopping list.",
-	MsgShoppingListHeader: "Shopping List (%d items)",
+	MsgShoppingEmpty:          "Shopping list is empty.",
+	MsgShoppingEmptyHint:      "Use 'recipe_box shopping generate <recipe-id>' to add items.",
+	MsgShoppingCleared:        "Shopping list cleared.",
+	MsgShoppingAdded:          "Added %d ingredients from '%s' to shopping list",
+	MsgShoppingShowHint:       "Use 'recipe_box shopping show' to view your shopping list.",
+	MsgShoppingListHeader:     "Shopping List (%d items)",
+	MsgShoppingGenerateNoArgs: "Please provide a recipe ID or use --plan to generate from meal plan",
+	MsgShoppingPlanNoRecipes:  "No recipes found in the meal plan for the specified days.",
 
 	// Categories
 	MsgCategoryProduce: "Produce",
@@ -115,8 +117,8 @@ var messagesEN = map[string]string{
 	MsgCmdRecipeDeleteLong:    "Remove a recipe from your collection.",
 
 	// Shopping subcommand descriptions
-	MsgCmdShoppingGenerateShort: "Generate shopping list from recipe",
-	MsgCmdShoppingGenerateLong:  "Add ingredients from a recipe to your shopping list.\n\nUse --servings to scale ingredient quantities for a different number of servings.\n\nExamples:\n  recipe_box shopping generate abc123\n  recipe_box shopping generate abc123 def456\n  recipe_box shopping generate abc123 --servings 8",
+	MsgCmdShoppingGenerateShort: "Generate shopping list from recipe or meal plan",
+	MsgCmdShoppingGenerateLong:  "Add ingredients from recipes to your shopping list.\n\nUse --plan to generate from your meal plan (aggregates all recipes).\nUse --days with --plan to limit to the first N days.\nUse --servings to scale ingredient quantities (for single recipes).\n\nExamples:\n  recipe_box shopping generate abc123\n  recipe_box shopping generate abc123 def456\n  recipe_box shopping generate abc123 --servings 8\n  recipe_box shopping generate --plan\n  recipe_box shopping generate --plan --days 3",
 	MsgCmdShoppingShowShort:     "Show current shopping list",
 	MsgCmdShoppingShowLong:      "Show all items in your shopping list, grouped by category.",
 	MsgCmdShoppingClearShort:    "Clear the shopping list",

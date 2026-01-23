@@ -2041,3 +2041,275 @@ func TestInteractive_PlanCommands(t *testing.T) {
 		t.Errorf("expected clear confirmation, got: %s", output)
 	}
 }
+
+func TestInteractive_ShoppingFromPlan(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create a recipe
+	recipe := map[string]interface{}{
+		"id":       "interactive-shop-plan",
+		"title":    "Interactive Shopping Test",
+		"servings": 2,
+		"ingredients": []map[string]interface{}{
+			{"name": "test ingredient", "quantity": 100, "unit": "g", "category": "pantry"},
+		},
+		"steps":    []string{"Cook"},
+		"source":   "manual",
+		"language": "en",
+	}
+	recipes := []interface{}{recipe}
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644)
+
+	session := startInteractive(t, home)
+	defer session.close()
+
+	// Create plan and add recipe
+	session.send("plan create --days 7")
+	session.waitAndRead(500 * time.Millisecond)
+
+	session.send("plan add monday interactive-shop-plan --servings 4")
+	session.waitAndRead(500 * time.Millisecond)
+
+	// Clear shopping list first
+	session.send("shopping clear")
+	session.waitAndRead(500 * time.Millisecond)
+
+	// Generate shopping list from plan
+	session.send("shopping generate --plan")
+	output := session.waitAndRead(500 * time.Millisecond)
+	if !strings.Contains(output, "Interactive Shopping Test") {
+		t.Errorf("expected recipe name in generate output, got: %s", output)
+	}
+	if !strings.Contains(output, "Added") && !strings.Contains(output, "hinzugefügt") {
+		t.Errorf("expected 'Added' message, got: %s", output)
+	}
+
+	// Show shopping list
+	session.send("shopping show")
+	output = session.waitAndRead(500 * time.Millisecond)
+	if !strings.Contains(output, "test ingredient") {
+		t.Errorf("expected 'test ingredient' in shopping list, got: %s", output)
+	}
+	// Check scaled quantity (100g * 2 = 200g for 4 servings from 2)
+	if !strings.Contains(output, "200") {
+		t.Errorf("expected scaled quantity (200g) in shopping list, got: %s", output)
+	}
+}
+
+// =============================================================================
+// Shopping from Meal Plan Tests
+// =============================================================================
+
+func TestShopping_GenerateFromPlan(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create two recipes
+	recipes := []map[string]interface{}{
+		{
+			"id":       "plan-shop-1",
+			"title":    "Pasta Dish",
+			"servings": 2,
+			"ingredients": []map[string]interface{}{
+				{"name": "pasta", "quantity": 200, "unit": "g", "category": "pantry"},
+				{"name": "tomatoes", "quantity": 400, "unit": "g", "category": "produce"},
+			},
+			"steps":    []string{"Cook pasta", "Add sauce"},
+			"source":   "manual",
+			"language": "en",
+		},
+		{
+			"id":       "plan-shop-2",
+			"title":    "Rice Bowl",
+			"servings": 4,
+			"ingredients": []map[string]interface{}{
+				{"name": "rice", "quantity": 300, "unit": "g", "category": "pantry"},
+				{"name": "chicken", "quantity": 500, "unit": "g", "category": "meat"},
+			},
+			"steps":    []string{"Cook rice", "Add chicken"},
+			"source":   "manual",
+			"language": "en",
+		},
+	}
+
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	if err := os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644); err != nil {
+		t.Fatalf("failed to write test recipes: %v", err)
+	}
+
+	// Create a meal plan and add recipes
+	_, _, err := runCmd(t, home, "plan", "create", "--days", "7")
+	if err != nil {
+		t.Fatalf("plan create failed: %v", err)
+	}
+
+	_, _, err = runCmd(t, home, "plan", "add", "monday", "plan-shop-1", "--servings", "4")
+	if err != nil {
+		t.Fatalf("plan add monday failed: %v", err)
+	}
+
+	_, _, err = runCmd(t, home, "plan", "add", "wednesday", "plan-shop-2")
+	if err != nil {
+		t.Fatalf("plan add wednesday failed: %v", err)
+	}
+
+	// Generate shopping list from plan
+	stdout, _, err := runCmd(t, home, "shopping", "generate", "--plan")
+	if err != nil {
+		t.Fatalf("shopping generate --plan failed: %v", err)
+	}
+
+	// Should show success messages for both recipes
+	if !strings.Contains(stdout, "Pasta Dish") {
+		t.Errorf("expected 'Pasta Dish' in output, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "Rice Bowl") {
+		t.Errorf("expected 'Rice Bowl' in output, got: %s", stdout)
+	}
+
+	// Show shopping list
+	stdout, _, err = runCmd(t, home, "shopping", "show")
+	if err != nil {
+		t.Fatalf("shopping show failed: %v", err)
+	}
+
+	// Check that all ingredients are present
+	if !strings.Contains(stdout, "pasta") {
+		t.Errorf("expected 'pasta' in shopping list, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "tomatoes") {
+		t.Errorf("expected 'tomatoes' in shopping list, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "rice") {
+		t.Errorf("expected 'rice' in shopping list, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "chicken") {
+		t.Errorf("expected 'chicken' in shopping list, got: %s", stdout)
+	}
+
+	// Check that pasta was scaled (200g * 2 = 400g for 4 servings from 2)
+	if !strings.Contains(stdout, "400") {
+		t.Errorf("expected scaled pasta (400g) in shopping list, got: %s", stdout)
+	}
+}
+
+func TestShopping_GenerateFromPlanWithDays(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create two recipes
+	recipes := []map[string]interface{}{
+		{
+			"id":       "days-shop-1",
+			"title":    "Day One Meal",
+			"servings": 2,
+			"ingredients": []map[string]interface{}{
+				{"name": "ingredient1", "quantity": 100, "unit": "g", "category": "pantry"},
+			},
+			"steps":    []string{"Cook"},
+			"source":   "manual",
+			"language": "en",
+		},
+		{
+			"id":       "days-shop-2",
+			"title":    "Day Six Meal",
+			"servings": 2,
+			"ingredients": []map[string]interface{}{
+				{"name": "ingredient2", "quantity": 200, "unit": "g", "category": "pantry"},
+			},
+			"steps":    []string{"Cook"},
+			"source":   "manual",
+			"language": "en",
+		},
+	}
+
+	data, _ := json.MarshalIndent(recipes, "", "  ")
+	os.WriteFile(filepath.Join(home, "recipes.json"), data, 0644)
+
+	// Create a meal plan
+	runCmd(t, home, "plan", "create", "--days", "7")
+
+	// Get the plan dates by reading the plan file
+	today := time.Now().Format("2006-01-02")
+	day6 := time.Now().AddDate(0, 0, 5).Format("2006-01-02")
+
+	// Add recipes to day 1 (today) and day 6 using ISO dates
+	runCmd(t, home, "plan", "add", today, "days-shop-1")
+	runCmd(t, home, "plan", "add", day6, "days-shop-2")
+
+	// Generate shopping list from only first 3 days
+	stdout, _, err := runCmd(t, home, "shopping", "generate", "--plan", "--days", "3")
+	if err != nil {
+		t.Fatalf("shopping generate --plan --days failed: %v", err)
+	}
+
+	// Should only show Day One's recipe (today is day 1)
+	if !strings.Contains(stdout, "Day One Meal") {
+		t.Errorf("expected 'Day One Meal' in output, got: %s", stdout)
+	}
+
+	// Day Six's recipe should NOT be included
+	if strings.Contains(stdout, "Day Six Meal") {
+		t.Errorf("did not expect 'Day Six Meal' in output for --days 3, got: %s", stdout)
+	}
+
+	// Check shopping list
+	stdout, _, _ = runCmd(t, home, "shopping", "show")
+	if !strings.Contains(stdout, "ingredient1") {
+		t.Errorf("expected 'ingredient1' in shopping list, got: %s", stdout)
+	}
+	if strings.Contains(stdout, "ingredient2") {
+		t.Errorf("did not expect 'ingredient2' in shopping list for --days 3, got: %s", stdout)
+	}
+}
+
+func TestShopping_GenerateFromPlanNoPlan(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Try to generate from plan when no plan exists
+	stdout, _, err := runCmd(t, home, "shopping", "generate", "--plan")
+	if err != nil {
+		t.Fatalf("shopping generate --plan should not error, got: %v", err)
+	}
+
+	// Should show "no plan" message
+	if !strings.Contains(stdout, "No meal plan") && !strings.Contains(stdout, "Kein Essensplan") {
+		t.Errorf("expected 'no plan' message, got: %s", stdout)
+	}
+}
+
+func TestShopping_GenerateFromPlanEmptyPlan(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Create an empty plan
+	_, _, err := runCmd(t, home, "plan", "create", "--days", "7")
+	if err != nil {
+		t.Fatalf("plan create failed: %v", err)
+	}
+
+	// Try to generate from empty plan
+	stdout, _, err := runCmd(t, home, "shopping", "generate", "--plan")
+	if err != nil {
+		t.Fatalf("shopping generate --plan should not error, got: %v", err)
+	}
+
+	// Should show "empty plan" message
+	if !strings.Contains(stdout, "empty") && !strings.Contains(stdout, "leer") {
+		t.Errorf("expected 'empty' message, got: %s", stdout)
+	}
+}
+
+func TestShopping_GenerateNoArgsError(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Try to generate without args and without --plan
+	_, stderr, err := runCmd(t, home, "shopping", "generate")
+	if err == nil {
+		t.Errorf("expected error when no args and no --plan flag")
+	}
+
+	// Should show helpful error message
+	combined := stderr
+	if !strings.Contains(combined, "recipe ID") && !strings.Contains(combined, "--plan") && !strings.Contains(combined, "Rezept-ID") {
+		t.Errorf("expected helpful error message about recipe ID or --plan, got: %s", combined)
+	}
+}

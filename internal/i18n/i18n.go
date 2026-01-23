@@ -25,12 +25,14 @@ const (
 	MsgRecipeNoGenerated = "recipe.no_generated"
 
 	// Shopping list
-	MsgShoppingEmpty      = "shopping.empty"
-	MsgShoppingEmptyHint  = "shopping.empty_hint"
-	MsgShoppingCleared    = "shopping.cleared"
-	MsgShoppingAdded      = "shopping.added"
-	MsgShoppingShowHint   = "shopping.show_hint"
-	MsgShoppingListHeader = "shopping.list_header"
+	MsgShoppingEmpty          = "shopping.empty"
+	MsgShoppingEmptyHint      = "shopping.empty_hint"
+	MsgShoppingCleared        = "shopping.cleared"
+	MsgShoppingAdded          = "shopping.added"
+	MsgShoppingShowHint       = "shopping.show_hint"
+	MsgShoppingListHeader     = "shopping.list_header"
+	MsgShoppingGenerateNoArgs = "shopping.generate_no_args"
+	MsgShoppingPlanNoRecipes  = "shopping.plan_no_recipes"
 
 	// Categories
 	MsgCategoryProduce = "category.produce"
